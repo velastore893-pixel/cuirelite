@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+async function getDb() {
+  if (!process.env.DATABASE_URL) {
+    return null;
+  }
+
+  const { db } = await import("@/db");
+  return db;
+}
+
+
 export async function GET() {
   try {
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({ categories: [] });
+    }
     const allCategories = await db.select().from(categories);
     return NextResponse.json({ categories: allCategories });
   } catch (error) {
@@ -18,6 +31,13 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json(
+        { success: false, error: "Database is not configured yet" },
+        { status: 503 }
+      );
+    }
     const body = await request.json();
 
     const slug = body.slug || body.name.toLowerCase().replace(/\s+/g, "-");
@@ -46,6 +66,13 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json(
+        { success: false, error: "Database is not configured yet" },
+        { status: 503 }
+      );
+    }
     const body = await request.json();
     const { id, ...rawData } = body;
 
@@ -90,6 +117,13 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json(
+        { success: false, error: "Database is not configured yet" },
+        { status: 503 }
+      );
+    }
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
