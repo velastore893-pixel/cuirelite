@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="320" viewBox="0 0 400 320">
+  <rect width="400" height="320" fill="#1a1a1a"/>
+  <text x="200" y="150" font-family="serif" font-size="32" fill="#c9a96e" text-anchor="middle">Jackets</text>
+  <text x="200" y="190" font-family="sans-serif" font-size="14" fill="#666" text-anchor="middle">Premium Leather</text>
+</svg>
