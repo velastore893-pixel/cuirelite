@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 
+import { StoreProvider } from "@/lib/store-context";
+import WhatsAppButton from "@/components/store/WhatsAppButton";
+
 export const metadata: Metadata = {
   title: "CUIR ELITE | Premium Leather Jackets for Women",
   description:
     "Discover our collection of premium leather jackets, blazers, and accessories for the modern woman. Handcrafted from the finest genuine leather.",
-  keywords: "leather jackets, women fashion, cuir, blazers, biker jackets",
+  keywords:
+    "leather jackets, women fashion, cuir, blazers, biker jackets",
 };
 
 export default function RootLayout({
@@ -22,7 +26,14 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased">{children}</body>
+
+      <body className="antialiased">
+        <StoreProvider>
+          {children}
+
+          <WhatsAppButton />
+        </StoreProvider>
+      </body>
     </html>
   );
 }
