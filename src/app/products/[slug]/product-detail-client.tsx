@@ -791,7 +791,6 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
                 </>
               )}
             </div>
-            </div>
           </div>
         </div>
 
