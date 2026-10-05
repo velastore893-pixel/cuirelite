@@ -6,10 +6,10 @@ import {
   CheckCircle,
   RefreshCw,
   MessageCircle,
-  Instagram,
-  Facebook,
   Music2,
   Image as ImageIcon,
+  Camera,
+  Globe,
 } from "lucide-react";
 
 interface Setting {
@@ -88,7 +88,7 @@ export default function AdminSettingsClient() {
 
     try {
       for (const setting of settings) {
-        await fetch("/api/admin/settings", {
+        const res = await fetch("/api/admin/settings", {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -98,6 +98,12 @@ export default function AdminSettingsClient() {
             value: setting.value,
           }),
         });
+
+        if (!res.ok) {
+          throw new Error(
+            `Failed to save setting: ${setting.key}`
+          );
+        }
       }
 
       setSaved(true);
@@ -154,7 +160,7 @@ export default function AdminSettingsClient() {
     {
       title: "Store Logo",
       description:
-        "Logo displayed on the storefront and navigation.",
+        "Logo displayed on your storefront and navigation.",
       fields: [
         {
           key: "logo_url",
@@ -162,7 +168,7 @@ export default function AdminSettingsClient() {
           type: "url",
           placeholder: "https://...",
           description:
-            "For now paste the image URL. We will add direct image upload next.",
+            "For now paste the image URL here. Direct image upload will be added separately.",
         },
       ],
     },
@@ -174,12 +180,13 @@ export default function AdminSettingsClient() {
       fields: [
         {
           key: "whatsapp_enabled",
-          label: "WhatsApp Button",
+          label: "Enable WhatsApp Button",
           type: "toggle",
         },
         {
           key: "whatsapp_number",
           label: "WhatsApp Number",
+          type: "tel",
           placeholder: "+212600000000",
           description:
             "Use the full international number including country code.",
@@ -196,7 +203,7 @@ export default function AdminSettingsClient() {
     {
       title: "Social Media",
       description:
-        "These social links will only appear in the website footer.",
+        "These links will appear only in the website footer.",
       fields: [
         {
           key: "instagram_url",
@@ -303,6 +310,10 @@ export default function AdminSettingsClient() {
       return <ImageIcon size={20} />;
     }
 
+    if (title === "Social Media") {
+      return <Globe size={20} />;
+    }
+
     return null;
   };
 
@@ -312,28 +323,40 @@ export default function AdminSettingsClient() {
         getSetting(field.key) === "true";
 
       return (
-        <button
-          type="button"
-          onClick={() =>
-            updateSetting(
-              field.key,
-              enabled ? "false" : "true"
-            )
-          }
-          className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-            enabled
-              ? "bg-green-500"
-              : "bg-gray-300"
-          }`}
-        >
-          <span
-            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() =>
+              updateSetting(
+                field.key,
+                enabled ? "false" : "true"
+              )
+            }
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
               enabled
-                ? "translate-x-6"
-                : "translate-x-1"
+                ? "bg-green-500"
+                : "bg-gray-300"
             }`}
-          />
-        </button>
+          >
+            <span
+              className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                enabled
+                  ? "translate-x-6"
+                  : "translate-x-1"
+              }`}
+            />
+          </button>
+
+          <span
+            className={`text-sm font-medium ${
+              enabled
+                ? "text-green-600"
+                : "text-gray-400"
+            }`}
+          >
+            {enabled ? "Enabled" : "Disabled"}
+          </span>
+        </div>
       );
     }
 
@@ -378,7 +401,8 @@ export default function AdminSettingsClient() {
         <div className="flex gap-3">
           <button
             onClick={fetchData}
-            className="flex items-center justify-center gap-2 bg-white border border-gray-200 px-4 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+            disabled={loading}
+            className="flex items-center justify-center gap-2 bg-white border border-gray-200 px-4 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             <RefreshCw
               size={16}
@@ -413,6 +437,7 @@ export default function AdminSettingsClient() {
         </div>
       </div>
 
+      {/* Settings Sections */}
       <div className="space-y-8">
         {sections.map((section) => (
           <div
@@ -421,9 +446,15 @@ export default function AdminSettingsClient() {
           >
             <div className="mb-6 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <span className="text-accent">
-                  {getSectionIcon(section.title)}
-                </span>
+                {getSectionIcon(
+                  section.title
+                ) && (
+                  <span className="text-accent">
+                    {getSectionIcon(
+                      section.title
+                    )}
+                  </span>
+                )}
 
                 <h2 className="text-lg font-bold text-gray-900">
                   {section.title}
@@ -473,36 +504,92 @@ export default function AdminSettingsClient() {
               ))}
             </div>
 
+            {/* WhatsApp Preview */}
+            {section.title === "WhatsApp" &&
+              getSetting(
+                "whatsapp_enabled"
+              ) === "true" && (
+                <div className="mt-6 pt-5 border-t border-gray-100">
+                  <div className="inline-flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+                    <div className="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center">
+                      <MessageCircle
+                        size={21}
+                      />
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">
+                        WhatsApp Button Enabled
+                      </p>
+
+                      <p className="text-xs text-gray-400">
+                        {getSetting(
+                          "whatsapp_number"
+                        ) ||
+                          "No number configured yet"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             {/* Social Preview */}
             {section.title ===
               "Social Media" && (
-              <div className="flex items-center gap-3 mt-6 pt-5 border-t border-gray-100">
-                {getSetting(
-                  "instagram_url"
-                ) && (
-                  <Instagram
-                    size={22}
-                    className="text-gray-600"
-                  />
-                )}
+              <div className="mt-6 pt-5 border-t border-gray-100">
+                <p className="text-xs text-gray-400 mb-3">
+                  Footer Preview
+                </p>
 
-                {getSetting(
-                  "facebook_url"
-                ) && (
-                  <Facebook
-                    size={22}
-                    className="text-gray-600"
-                  />
-                )}
+                <div className="flex items-center gap-3">
+                  {getSetting(
+                    "instagram_url"
+                  ) && (
+                    <div
+                      className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600"
+                      title="Instagram"
+                    >
+                      <Camera size={20} />
+                    </div>
+                  )}
 
-                {getSetting(
-                  "tiktok_url"
-                ) && (
-                  <Music2
-                    size={22}
-                    className="text-gray-600"
-                  />
-                )}
+                  {getSetting(
+                    "facebook_url"
+                  ) && (
+                    <div
+                      className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600"
+                      title="Facebook"
+                    >
+                      <Globe size={20} />
+                    </div>
+                  )}
+
+                  {getSetting(
+                    "tiktok_url"
+                  ) && (
+                    <div
+                      className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600"
+                      title="TikTok"
+                    >
+                      <Music2 size={20} />
+                    </div>
+                  )}
+
+                  {!getSetting(
+                    "instagram_url"
+                  ) &&
+                    !getSetting(
+                      "facebook_url"
+                    ) &&
+                    !getSetting(
+                      "tiktok_url"
+                    ) && (
+                      <span className="text-sm text-gray-400">
+                        Add social media links to
+                        display them in the footer.
+                      </span>
+                    )}
+                </div>
               </div>
             )}
           </div>
