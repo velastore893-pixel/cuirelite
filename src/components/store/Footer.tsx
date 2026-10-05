@@ -1,42 +1,146 @@
 "use client";
 
 import Link from "next/link";
-import { Mail, Phone, MapPin, ArrowRight } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  ArrowRight,
+} from "lucide-react";
 import { useStore } from "@/lib/store-context";
 
 export default function Footer() {
-  const { language, settings } = useStore();
+  const { language, settings, t } = useStore();
+
+  const footerText = {
+    en: {
+      joinCommunity: "Join Our Community",
+      newsletterDescription:
+        "Subscribe to get exclusive offers, new arrivals, and style tips.",
+      emailPlaceholder: "Enter your email",
+      subscribe: "Subscribe",
+
+      shopAll: "Shop All",
+      jackets: "Jackets",
+      blazers: "Blazers",
+      aboutUs: "About Us",
+
+      customerCare: "Customer Care",
+      shippingPolicy: "Shipping Policy",
+      returns: "Returns & Exchanges",
+      sizeGuide: "Size Guide",
+      faqs: "FAQs",
+      contactUs: "Contact Us",
+
+      allRightsReserved: "All rights reserved.",
+    },
+
+    ar: {
+      joinCommunity: "انضمي إلى مجتمعنا",
+      newsletterDescription:
+        "اشتركي للحصول على عروض حصرية ومنتجات جديدة ونصائح أزياء.",
+      emailPlaceholder: "أدخلي بريدك الإلكتروني",
+      subscribe: "اشتركي",
+
+      shopAll: "تسوقي الكل",
+      jackets: "جاكيتات",
+      blazers: "بلايزر",
+      aboutUs: "من نحن",
+
+      customerCare: "خدمة العملاء",
+      shippingPolicy: "سياسة الشحن",
+      returns: "المرتجعات والاستبدال",
+      sizeGuide: "دليل المقاسات",
+      faqs: "الأسئلة الشائعة",
+      contactUs: "تواصلي معنا",
+
+      allRightsReserved: "جميع الحقوق محفوظة.",
+    },
+  };
+
+  const ft = footerText[language];
+
+  const quickLinks = [
+    {
+      href: "/products",
+      label: ft.shopAll,
+    },
+    {
+      href: "/products?category=leather-jackets",
+      label: ft.jackets,
+    },
+    {
+      href: "/products?category=blazers",
+      label: ft.blazers,
+    },
+    {
+      href: "/products?isFeatured=true",
+      label: t("featured"),
+    },
+    {
+      href: "/about",
+      label: ft.aboutUs,
+    },
+  ];
+
+  const customerCareLinks = [
+    ft.shippingPolicy,
+    ft.returns,
+    ft.sizeGuide,
+    ft.faqs,
+    ft.contactUs,
+  ];
 
   return (
-    <footer className="bg-brand text-white">
+    <footer
+      className="bg-brand text-white"
+      dir={language === "ar" ? "rtl" : "ltr"}
+    >
       {/* Newsletter Section */}
       <div className="border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="max-w-2xl mx-auto text-center">
             <h3
               className="text-3xl font-bold mb-4"
-              style={{ fontFamily: "Playfair Display, serif" }}
+              style={{
+                fontFamily: "Playfair Display, serif",
+              }}
             >
-              {language === "en"
-                ? "Join Our Community"
-                : "انضمي إلى مجتمعنا"}
+              {ft.joinCommunity}
             </h3>
+
             <p className="text-white/60 mb-8">
-              {language === "en"
-                ? "Subscribe to get exclusive offers, new arrivals, and style tips."
-                : "اشتركي للحصول على عروض حصرية ومنتجات جديدة ونصائح أزياء."}
+              {ft.newsletterDescription}
             </p>
-            <div className="flex gap-3 max-w-md mx-auto">
+
+            <div
+              className={`flex gap-3 max-w-md mx-auto ${
+                language === "ar"
+                  ? "flex-row-reverse"
+                  : ""
+              }`}
+            >
               <input
                 type="email"
-                placeholder={
-                  language === "en" ? "Enter your email" : "أدخلي بريدك الإلكتروني"
-                }
-                className="flex-1 bg-white/10 border border-white/20 rounded-full px-6 py-3 text-sm placeholder-white/40 focus:outline-none focus:border-accent transition-colors"
+                placeholder={ft.emailPlaceholder}
+                className={`flex-1 min-w-0 bg-white/10 border border-white/20 rounded-full px-6 py-3 text-sm placeholder-white/40 focus:outline-none focus:border-accent transition-colors ${
+                  language === "ar"
+                    ? "text-right"
+                    : "text-left"
+                }`}
               />
-              <button className="bg-accent hover:bg-accent-dark text-white px-6 py-3 rounded-full font-medium text-sm tracking-wider uppercase flex items-center gap-2 transition-colors btn-shine">
-                {language === "en" ? "Subscribe" : "اشتركي"}
-                <ArrowRight size={14} />
+
+              <button className="bg-accent hover:bg-accent-dark text-white px-6 py-3 rounded-full font-medium text-sm tracking-wider uppercase flex items-center gap-2 transition-colors btn-shine whitespace-nowrap">
+                {ft.subscribe}
+
+                <ArrowRight
+                  size={14}
+                  className={
+                    language === "ar"
+                      ? "rotate-180"
+                      : ""
+                  }
+                />
               </button>
             </div>
           </div>
@@ -50,26 +154,96 @@ export default function Footer() {
           <div>
             <h2
               className="text-2xl font-black tracking-[0.2em] mb-4"
-              style={{ fontFamily: "Playfair Display, serif" }}
+              style={{
+                fontFamily: "Playfair Display, serif",
+              }}
             >
               {language === "ar"
-                ? settings.store_name_ar || settings.store_name
+                ? settings.store_name_ar ||
+                  settings.store_name
                 : settings.store_name}
             </h2>
+
             <p className="text-white/60 text-sm leading-relaxed mb-6">
               {language === "ar"
-                ? settings.store_description_ar || settings.store_description
+                ? settings.store_description_ar ||
+                  settings.store_description
                 : settings.store_description}
             </p>
+
             <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+              {/* Instagram */}
+              <a
+                href="#"
+                aria-label="Instagram"
+                className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect
+                    width="20"
+                    height="20"
+                    x="2"
+                    y="2"
+                    rx="5"
+                    ry="5"
+                  />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line
+                    x1="17.5"
+                    x2="17.51"
+                    y1="6.5"
+                    y2="6.5"
+                  />
+                </svg>
               </a>
-              <a href="#" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+
+              {/* Facebook */}
+              <a
+                href="#"
+                aria-label="Facebook"
+                className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+                </svg>
               </a>
-              <a href="#" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+
+              {/* Twitter / X */}
+              <a
+                href="#"
+                aria-label="Twitter"
+                className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-accent transition-colors"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
+                </svg>
               </a>
             </div>
           </div>
@@ -77,16 +251,11 @@ export default function Footer() {
           {/* Quick Links */}
           <div>
             <h4 className="font-semibold tracking-wider uppercase text-sm mb-6">
-              {language === "en" ? "Quick Links" : "روابط سريعة"}
+              {t("quickLinks")}
             </h4>
+
             <ul className="space-y-3">
-              {[
-                { href: "/products", label: "Shop All", labelAr: "المتجر" },
-                { href: "/products?category=leather-jackets", label: "Jackets", labelAr: "جاكيتات" },
-                { href: "/products?category=blazers", label: "Blazers", labelAr: "بلايزر" },
-                { href: "/products?isFeatured=true", label: "Featured", labelAr: "مميزة" },
-                { href: "/about", label: "About Us", labelAr: "من نحن" },
-              ].map((link) => (
+              {quickLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -94,9 +263,14 @@ export default function Footer() {
                   >
                     <ArrowRight
                       size={12}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      className={`opacity-0 group-hover:opacity-100 transition-opacity ${
+                        language === "ar"
+                          ? "rotate-180"
+                          : ""
+                      }`}
                     />
-                    {language === "en" ? link.label : link.labelAr}
+
+                    {link.label}
                   </Link>
                 </li>
               ))}
@@ -106,54 +280,105 @@ export default function Footer() {
           {/* Customer Care */}
           <div>
             <h4 className="font-semibold tracking-wider uppercase text-sm mb-6">
-              {language === "en" ? "Customer Care" : "خدمة العملاء"}
+              {ft.customerCare}
             </h4>
+
             <ul className="space-y-3">
-              {[
-                { label: "Shipping Policy", labelAr: "سياسة الشحن" },
-                { label: "Returns & Exchanges", labelAr: "المرتجعات والاستبدال" },
-                { label: "Size Guide", labelAr: "دليل المقاسات" },
-                { label: "FAQs", labelAr: "الأسئلة الشائعة" },
-                { label: "Contact Us", labelAr: "اتصلي بنا" },
-              ].map((item) => (
-                <li key={item.label}>
-                  <a
-                    href="#"
-                    className="text-white/60 hover:text-accent text-sm transition-colors flex items-center gap-2 group"
-                  >
-                    <ArrowRight
-                      size={12}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    />
-                    {language === "en" ? item.label : item.labelAr}
-                  </a>
-                </li>
-              ))}
+              {customerCareLinks.map(
+                (item) => (
+                  <li key={item}>
+                    <a
+                      href="#"
+                      className="text-white/60 hover:text-accent text-sm transition-colors flex items-center gap-2 group"
+                    >
+                      <ArrowRight
+                        size={12}
+                        className={`opacity-0 group-hover:opacity-100 transition-opacity ${
+                          language === "ar"
+                            ? "rotate-180"
+                            : ""
+                        }`}
+                      />
+
+                      {item}
+                    </a>
+                  </li>
+                )
+              )}
             </ul>
           </div>
 
-          {/* Contact - Dynamic from settings */}
+          {/* Contact */}
           <div>
             <h4 className="font-semibold tracking-wider uppercase text-sm mb-6">
-              {language === "en" ? "Contact Us" : "تواصلي معنا"}
+              {ft.contactUs}
             </h4>
+
             <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <MapPin size={18} className="text-accent mt-0.5 flex-shrink-0" />
-                <span className="text-white/60 text-sm">
-                  {settings.store_address}
-                </span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Phone size={18} className="text-accent flex-shrink-0" />
-                <span className="text-white/60 text-sm">{settings.store_phone}</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Mail size={18} className="text-accent flex-shrink-0" />
-                <span className="text-white/60 text-sm">
-                  {settings.store_email}
-                </span>
-              </li>
+              {settings.store_address && (
+                <li className="flex items-start gap-3">
+                  <MapPin
+                    size={18}
+                    className="text-accent mt-0.5 flex-shrink-0"
+                  />
+
+                  <div>
+                    <span className="text-xs text-white/40 block mb-1">
+                      {t("addressLabel")}
+                    </span>
+
+                    <span className="text-white/60 text-sm">
+                      {settings.store_address}
+                    </span>
+                  </div>
+                </li>
+              )}
+
+              {settings.store_phone && (
+                <li className="flex items-start gap-3">
+                  <Phone
+                    size={18}
+                    className="text-accent mt-0.5 flex-shrink-0"
+                  />
+
+                  <div>
+                    <span className="text-xs text-white/40 block mb-1">
+                      {t("phoneLabel")}
+                    </span>
+
+                    <a
+                      href={`tel:${settings.store_phone}`}
+                      className="text-white/60 hover:text-accent text-sm transition-colors"
+                      dir="ltr"
+                    >
+                      {settings.store_phone}
+                    </a>
+                  </div>
+                </li>
+              )}
+
+              {settings.store_email && (
+                <li className="flex items-start gap-3">
+                  <Mail
+                    size={18}
+                    className="text-accent mt-0.5 flex-shrink-0"
+                  />
+
+                  <div>
+                    <span className="text-xs text-white/40 block mb-1">
+                      {t("email")}
+                    </span>
+
+                    <a
+                      href={`mailto:${settings.store_email}`}
+                      className="text-white/60 hover:text-accent text-sm transition-colors"
+                      dir="ltr"
+                    >
+                      {settings.store_email}
+                    </a>
+                  </div>
+                </li>
+              )}
             </ul>
           </div>
         </div>
@@ -163,14 +388,26 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-white/40 text-sm">
-              © {new Date().getFullYear()} {settings.store_name}. All rights reserved.
+            <p className="text-white/40 text-sm text-center">
+              © {new Date().getFullYear()}{" "}
+              {language === "ar"
+                ? settings.store_name_ar ||
+                  settings.store_name
+                : settings.store_name}
+              . {ft.allRightsReserved}
             </p>
-            <div className="flex items-center gap-6">
-              {["Visa", "Mastercard", "PayPal", "Apple Pay"].map((item) => (
+
+            <div className="flex items-center gap-6 flex-wrap justify-center">
+              {[
+                "Visa",
+                "Mastercard",
+                "PayPal",
+                "Apple Pay",
+              ].map((item) => (
                 <span
                   key={item}
                   className="text-white/30 text-xs font-medium tracking-wider"
+                  dir="ltr"
                 >
                   {item}
                 </span>
