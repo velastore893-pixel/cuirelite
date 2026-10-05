@@ -142,6 +142,16 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
     ? parseFloat(getSelectedOfferData()!.price)
     : parseFloat(product.price);
 
+  // Quantity discount: every extra item after the first saves 50 DH.
+  // Product offers keep their own pricing and do not receive this extra discount.
+  const quantityDiscount =
+    !getSelectedOfferData() && orderQuantity > 1
+      ? (orderQuantity - 1) * 50
+      : 0;
+
+  const orderSubtotal = orderPrice * orderQuantity;
+  const orderTotal = Math.max(0, orderSubtotal - quantityDiscount);
+
   const submitOrder = async () => {
     // Prevent duplicate submissions — the button is also disabled while submitting
     if (orderSubmitting) return;
@@ -503,6 +513,18 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
                   <Plus size={18} />
                 </button>
               </div>
+
+              {quantity > 1 && (
+                <div className="mt-3">
+                  <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-xl text-sm font-bold">
+                    🎉 وفرتي {quantityDiscount.toFixed(0)} DH
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    كل قطعة إضافية كتزيدها كتربح عليها 50 DH
+                  </p>
+                </div>
+              )}
+
               {product.stock !== null && product.stock < 10 && (
                 <p className="text-sm text-orange-500 mt-2">
                   {language === "en"
@@ -696,6 +718,32 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
                     </div>
                   )}
 
+                  {/* Quantity discount summary */}
+                  {quantityDiscount > 0 && (
+                    <div className="mt-5 bg-green-50 border border-green-200 rounded-xl p-4">
+                      <div className="flex items-center justify-between text-sm mb-2">
+                        <span className="text-gray-600">المجموع قبل الخصم</span>
+                        <span className="font-semibold text-gray-900">
+                          {orderSubtotal.toFixed(2)} DH
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm mb-2">
+                        <span className="text-green-700 font-semibold">خصم الكمية</span>
+                        <span className="text-green-700 font-bold">
+                          -{quantityDiscount.toFixed(2)} DH
+                        </span>
+                      </div>
+
+                      <div className="border-t border-green-200 pt-2 flex items-center justify-between">
+                        <span className="font-bold text-gray-900">المجموع بعد الخصم</span>
+                        <span className="font-bold text-lg text-green-700">
+                          {orderTotal.toFixed(2)} DH
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Submit Button */}
                   <button
                     onClick={submitOrder}
@@ -710,7 +758,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
                     ) : (
                       <>
                         <Package size={20} />
-                        تأكيد الطلب - {settings.currency_symbol || "$"}{(orderPrice * orderQuantity).toFixed(2)}
+                        تأكيد الطلب - {orderTotal.toFixed(2)} DH
                       </>
                     )}
                   </button>
