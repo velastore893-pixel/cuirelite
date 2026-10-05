@@ -184,7 +184,14 @@ export async function POST(request: NextRequest) {
 
           // Price ALWAYS from the database — never from the client
           const price = Math.round(Number(productRow.price) * 100) / 100;
-          subtotal += Math.round(price * item.quantity * 100) / 100;
+
+          // Quantity discount: every extra item after the first saves 50 DH.
+          // Example at 299 DH: 1 = 299, 2 = 548, 3 = 797.
+          const baseLineTotal = Math.round(price * item.quantity * 100) / 100;
+          const quantityDiscount = item.quantity > 1 ? (item.quantity - 1) * 50 : 0;
+          const finalLineTotal = Math.max(0, baseLineTotal - quantityDiscount);
+
+          subtotal += finalLineTotal;
 
           lineItems.push({
             productId: item.productId,
