@@ -64,7 +64,7 @@ interface Props {
 }
 
 function ProductDetailContent({ product, category, relatedProducts }: Props) {
-  const { language, settings } = useStore();
+  const { language, settings, t } = useStore();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
@@ -163,19 +163,19 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
     const trimmedCity = orderForm.city.trim();
 
     if (!trimmedName || !trimmedPhone || !trimmedAddress || !trimmedCity) {
-      setOrderError("يرجى ملء جميع الحقول المطلوبة");
+      setOrderError(t("fillRequiredFields"));
       return;
     }
     if (trimmedName.length < 2) {
-      setOrderError("يرجى إدخال الاسم الكامل");
+      setOrderError(t("enterFullName"));
       return;
     }
     if (!/^[0-9+\-\s()]{8,20}$/.test(trimmedPhone)) {
-      setOrderError("يرجى إدخال رقم هاتف صحيح");
+      setOrderError(t("enterValidPhone"));
       return;
     }
     if (trimmedAddress.length < 5) {
-      setOrderError("يرجى إدخال العنوان الكامل");
+      setOrderError(t("enterFullAddress"));
       return;
     }
 
@@ -223,19 +223,19 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
         window.location.href = `/order-success?${params.toString()}`;
       } else {
         setOrderError(
-          data.error || "تعذّر إنشاء الطلب. حاول مرة أخرى."
+          data.error || t("orderFailed")
         );
       }
     } catch (err) {
       console.error("Order failed:", err);
-      setOrderError("تعذّر الاتصال بالخادم. حاول مرة أخرى.");
+      setOrderError(t("serverConnectionFailed"));
     } finally {
       setOrderSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" dir={language === "ar" ? "rtl" : "ltr"}>
       <Navbar />
       <CartSidebar />
 
@@ -244,14 +244,14 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center gap-2 text-sm text-gray-400">
             <Link href="/" className="hover:text-accent transition-colors">
-              {language === "en" ? "Home" : "الرئيسية"}
+              {t("home")}
             </Link>
             <ChevronRight size={14} />
             <Link
               href="/products"
               className="hover:text-accent transition-colors"
             >
-              {language === "en" ? "Shop" : "المتجر"}
+              {t("shop")}
             </Link>
             <ChevronRight size={14} />
             {category && (
@@ -280,7 +280,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
             <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 mb-4">
               {product.isNewArrival && (
                 <span className="absolute top-4 left-4 z-10 bg-accent text-white text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-full">
-                  NEW
+                  {t("newArrival")}
                 </span>
               )}
               <div
@@ -310,7 +310,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
           <div>
             {product.isNewArrival && (
               <span className="text-accent font-medium text-sm tracking-wider uppercase mb-2 block">
-                {language === "en" ? "New Arrival" : "وصل حديثاً"}
+                {t("newArrival")}
               </span>
             )}
 
@@ -332,7 +332,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
                   />
                 ))}
               </div>
-              <span className="text-sm text-gray-400">(4.8) · 124 reviews</span>
+              <span className="text-sm text-gray-400">(4.8) · 124 {language === "ar" ? "تقييم" : "reviews"}</span>
             </div>
 
             {/* Price */}
@@ -365,7 +365,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
             {show("pp_show_color_selector") && product.colors && product.colors.length > 0 && (
               <div className="mb-6">
                 <label className="text-sm font-semibold text-brand mb-3 block">
-                  {language === "en" ? "Color" : "اللون"}:{" "}
+                  {t("color")}:{" "}
                   {selectedColor && (
                     <span className="text-accent font-normal">
                       {selectedColor}
@@ -404,7 +404,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
             {show("pp_show_size_selector") && product.sizes && product.sizes.length > 0 && (
               <div className="mb-6">
                 <label className="text-sm font-semibold text-brand mb-3 block">
-                  {language === "en" ? "Size" : "المقاس"}
+                  {t("size")}
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   {product.sizes.map((size) => (
@@ -428,7 +428,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
             {productOffers.length > 0 && (
               <div className="mb-6">
                 <label className="text-sm font-semibold text-brand mb-3 block flex items-center gap-2">
-                  🎁 اختر العرض
+                  🎁 {t("chooseOffer")}
                 </label>
                 <div className="space-y-3">
                   {productOffers.map((offer) => {
@@ -466,7 +466,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
                             </span>
                             {discount > 0 && (
                               <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                خصم {discount}%
+                                {t("discount")} {discount}%
                               </span>
                             )}
                           </div>
@@ -494,7 +494,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
             {/* Quantity */}
                     {show("pp_show_quantity") && !getSelectedOfferData() && (<div className="mb-6">
               <label className="text-sm font-semibold text-brand mb-3 block">
-                {language === "en" ? "Quantity" : "الكمية"}
+                {t("quantity")}
               </label>
               <div className="inline-flex items-center gap-3 bg-gray-100 rounded-xl px-2">
                 <button
@@ -517,19 +517,17 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
               {quantity > 1 && (
                 <div className="mt-3">
                   <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-xl text-sm font-bold">
-                    🎉 وفرتي {quantityDiscount.toFixed(0)} DH
+                    {t("youSaved", { amount: quantityDiscount.toFixed(0) })}
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    كل قطعة إضافية كتزيدها كتربح عليها 50 DH
+                    {t("extraItemDiscount")}
                   </p>
                 </div>
               )}
 
               {product.stock !== null && product.stock < 10 && (
                 <p className="text-sm text-orange-500 mt-2">
-                  {language === "en"
-                    ? `Only ${product.stock} left in stock`
-                    : `فقط ${product.stock} متبقي في المخزون`}
+                  {t("onlyLeft", { count: product.stock })}
                 </p>
               )}
             </div>)}
@@ -541,7 +539,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
             {productOffers.length > 0 && (
               <div className="mb-6">
                 <label className="text-sm font-semibold text-brand mb-3 block flex items-center gap-2">
-                  🎯 اختر العرض
+                  🎯 {t("chooseOffer")}
                 </label>
                 <div className="grid grid-cols-1 gap-3">
                   {productOffers.map((offer) => {
@@ -587,7 +585,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
                             )}
                             {savings > 0 && (
                               <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                وفر {savings}%
+                                {t("save")} {savings}%
                               </span>
                             )}
                           </div>
@@ -623,10 +621,10 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
               <div className="mb-5">
                 <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full text-xs font-bold mb-3">
                   <Zap size={12} />
-                  اطلب الآن
+                  {t("orderNow")}
                 </div>
                 <h3 className="text-xl font-bold text-brand">
-                  أكمل معلوماتك للطلب
+                  {t("completeOrderInfo")}
                 </h3>
               </div>
 
@@ -634,8 +632,12 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
               {orderSuccess ? (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
                   <CheckCircle size={40} className="text-green-600 mx-auto mb-3" />
-                  <h4 className="font-bold text-green-800 text-lg">تم الطلب بنجاح! ✅</h4>
-                  <p className="text-green-600 text-sm mt-1">سنتواصل معك قريباً لتأكيد الطلب</p>
+                  <h4 className="font-bold text-green-800 text-lg">
+                    {t("orderSuccess")}
+                  </h4>
+                  <p className="text-green-600 text-sm mt-1">
+                    {t("orderSuccessMessage")}
+                  </p>
                 </div>
               ) : (
                 <>
@@ -644,69 +646,80 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                         <User size={12} className="inline ml-1" />
-                        الاسم الكامل *
+                        {t("fullName")} *
                       </label>
                       <input
                         type="text"
                         value={orderForm.fullName}
-                        onChange={(e) => setOrderForm({ ...orderForm, fullName: e.target.value })}
+                        onChange={(e) =>
+                          setOrderForm({ ...orderForm, fullName: e.target.value })
+                        }
                         className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all"
-                        placeholder="أدخل اسمك الكامل"
+                        placeholder={t("fullNamePlaceholder")}
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                         <Phone size={12} className="inline ml-1" />
-                        رقم الهاتف *
+                        {t("phone")} *
                       </label>
                       <input
                         type="tel"
                         value={orderForm.phone}
-                        onChange={(e) => setOrderForm({ ...orderForm, phone: e.target.value })}
+                        onChange={(e) =>
+                          setOrderForm({ ...orderForm, phone: e.target.value })
+                        }
                         className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all"
-                        placeholder="+212 600 000 000"
+                        placeholder={t("phonePlaceholder")}
+                        dir="ltr"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                         <MapPin size={12} className="inline ml-1" />
-                        العنوان *
+                        {t("address")} *
                       </label>
                       <input
                         type="text"
                         value={orderForm.address}
-                        onChange={(e) => setOrderForm({ ...orderForm, address: e.target.value })}
+                        onChange={(e) =>
+                          setOrderForm({ ...orderForm, address: e.target.value })
+                        }
                         className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all"
-                        placeholder="الشارع، الحي، العمارة..."
+                        placeholder={t("addressPlaceholder")}
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                         <Building size={12} className="inline ml-1" />
-                        المدينة *
+                        {t("city")} *
                       </label>
                       <input
                         type="text"
                         value={orderForm.city}
-                        onChange={(e) => setOrderForm({ ...orderForm, city: e.target.value })}
+                        onChange={(e) =>
+                          setOrderForm({ ...orderForm, city: e.target.value })
+                        }
                         className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all"
-                        placeholder="المدينة"
+                        placeholder={t("cityPlaceholder")}
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        ملاحظات (اختياري)
+                        {t("notes")} ({t("optional")})
                       </label>
                       <textarea
                         value={orderForm.notes}
-                        onChange={(e) => setOrderForm({ ...orderForm, notes: e.target.value })}
+                        onChange={(e) =>
+                          setOrderForm({ ...orderForm, notes: e.target.value })
+                        }
                         className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all resize-none"
                         rows={2}
-                        placeholder="أي ملاحظات إضافية..."
+                        placeholder={t("notesPlaceholder")}
                       />
                     </div>
                   </div>
@@ -722,22 +735,28 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
                   {quantityDiscount > 0 && (
                     <div className="mt-5 bg-green-50 border border-green-200 rounded-xl p-4">
                       <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="text-gray-600">المجموع قبل الخصم</span>
-                        <span className="font-semibold text-gray-900">
+                        <span className="text-gray-600">
+                          {t("subtotalBeforeDiscount")}
+                        </span>
+                        <span className="font-semibold text-gray-900" dir="ltr">
                           {orderSubtotal.toFixed(2)} DH
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="text-green-700 font-semibold">خصم الكمية</span>
-                        <span className="text-green-700 font-bold">
+                        <span className="text-green-700 font-semibold">
+                          {t("quantityDiscount")}
+                        </span>
+                        <span className="text-green-700 font-bold" dir="ltr">
                           -{quantityDiscount.toFixed(2)} DH
                         </span>
                       </div>
 
                       <div className="border-t border-green-200 pt-2 flex items-center justify-between">
-                        <span className="font-bold text-gray-900">المجموع بعد الخصم</span>
-                        <span className="font-bold text-lg text-green-700">
+                        <span className="font-bold text-gray-900">
+                          {t("totalAfterDiscount")}
+                        </span>
+                        <span className="font-bold text-lg text-green-700" dir="ltr">
                           {orderTotal.toFixed(2)} DH
                         </span>
                       </div>
@@ -753,23 +772,25 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
                     {orderSubmitting ? (
                       <>
                         <Loader2 size={20} className="animate-spin" />
-                        جاري تأكيد الطلب...
+                        {t("confirmingOrder")}
                       </>
                     ) : (
                       <>
                         <Package size={20} />
-                        تأكيد الطلب - {orderTotal.toFixed(2)} DH
+                        {t("confirmOrder")} -{" "}
+                        <span dir="ltr">{orderTotal.toFixed(2)} DH</span>
                       </>
                     )}
                   </button>
 
                   <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-gray-400">
-                    <span>💰 الدفع عند الاستلام</span>
-                    <span>🚚 شحن مجاني</span>
-                    <span>✅ ضمان</span>
+                    <span>💰 {t("cashOnDelivery")}</span>
+                    <span>🚚 {t("freeShipping")}</span>
+                    <span>✅ {t("guarantee")}</span>
                   </div>
                 </>
               )}
+            </div>
             </div>
           </div>
         </div>
