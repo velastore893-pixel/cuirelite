@@ -26,7 +26,6 @@ export default function Navbar() {
     t,
   } = useStore();
 
-  // Logo click counter for admin access
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
 
@@ -87,6 +86,17 @@ export default function Navbar() {
     setLanguage(language === "en" ? "ar" : "en");
   };
 
+  const storeName =
+    language === "ar"
+      ? settings.store_name_ar || settings.store_name
+      : settings.store_name;
+
+  const storeDescription =
+    language === "ar"
+      ? settings.store_description_ar ||
+        settings.store_description
+      : settings.store_description;
+
   return (
     <>
       <nav
@@ -122,35 +132,43 @@ export default function Navbar() {
               onClick={handleLogoClick}
               className="flex flex-col items-center relative"
             >
-              <h1
-                className={`text-2xl md:text-3xl font-black tracking-[0.3em] transition-colors duration-300 ${
-                  isScrolled
-                    ? "text-brand"
-                    : "text-white"
-                }`}
-                style={{
-                  fontFamily:
-                    "Playfair Display, serif",
-                }}
-              >
-                {language === "ar"
-                  ? settings.store_name_ar ||
-                    settings.store_name
-                  : settings.store_name}
-              </h1>
+              {settings.logo_url ? (
+                <img
+                  src={settings.logo_url}
+                  alt={storeName}
+                  className={`object-contain transition-all duration-300 ${
+                    isScrolled
+                      ? "h-10 md:h-12"
+                      : "h-12 md:h-14"
+                  } max-w-[180px] md:max-w-[220px]`}
+                />
+              ) : (
+                <>
+                  <h1
+                    className={`text-2xl md:text-3xl font-black tracking-[0.3em] transition-colors duration-300 ${
+                      isScrolled
+                        ? "text-brand"
+                        : "text-white"
+                    }`}
+                    style={{
+                      fontFamily:
+                        "Playfair Display, serif",
+                    }}
+                  >
+                    {storeName}
+                  </h1>
 
-              <span
-                className={`text-[10px] tracking-[0.5em] uppercase transition-colors duration-300 ${
-                  isScrolled
-                    ? "text-accent"
-                    : "text-accent-light"
-                }`}
-              >
-                {language === "ar"
-                  ? settings.store_description_ar ||
-                    settings.store_description
-                  : settings.store_description}
-              </span>
+                  <span
+                    className={`text-[10px] tracking-[0.5em] uppercase transition-colors duration-300 ${
+                      isScrolled
+                        ? "text-accent"
+                        : "text-accent-light"
+                    }`}
+                  >
+                    {storeDescription}
+                  </span>
+                </>
+              )}
 
               {/* Admin Hint */}
               {showAdminHint && (
@@ -268,7 +286,6 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
-          {/* Overlay */}
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() =>
@@ -276,7 +293,6 @@ export default function Navbar() {
             }
           />
 
-          {/* Drawer */}
           <div
             className={`absolute top-0 bottom-0 w-72 bg-white shadow-2xl ${
               language === "ar"
@@ -286,25 +302,31 @@ export default function Navbar() {
           >
             <div className="p-6">
               {/* Mobile Logo */}
-              <h2
-                className="text-xl font-black tracking-[0.2em] text-brand mb-2"
-                style={{
-                  fontFamily:
-                    "Playfair Display, serif",
-                }}
-              >
-                {language === "ar"
-                  ? settings.store_name_ar ||
-                    settings.store_name
-                  : settings.store_name}
-              </h2>
+              <div className="mb-8">
+                {settings.logo_url ? (
+                  <img
+                    src={settings.logo_url}
+                    alt={storeName}
+                    className="h-12 max-w-[180px] object-contain"
+                  />
+                ) : (
+                  <>
+                    <h2
+                      className="text-xl font-black tracking-[0.2em] text-brand mb-2"
+                      style={{
+                        fontFamily:
+                          "Playfair Display, serif",
+                      }}
+                    >
+                      {storeName}
+                    </h2>
 
-              <p className="text-xs text-gray-400 mb-8">
-                {language === "ar"
-                  ? settings.store_description_ar ||
-                    settings.store_description
-                  : settings.store_description}
-              </p>
+                    <p className="text-xs text-gray-400">
+                      {storeDescription}
+                    </p>
+                  </>
+                )}
+              </div>
 
               {/* Links */}
               <div>
@@ -326,11 +348,9 @@ export default function Navbar() {
                 ))}
               </div>
 
-              {/* Mobile Language Switch */}
+              {/* Language Switch */}
               <button
-                onClick={() => {
-                  toggleLanguage();
-                }}
+                onClick={toggleLanguage}
                 className="mt-6 w-full flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-brand hover:border-accent hover:text-accent transition-colors"
               >
                 <Globe size={18} />
