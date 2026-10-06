@@ -38,6 +38,7 @@ export default function AdminSettingsClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -81,6 +82,73 @@ export default function AdminSettingsClient() {
         },
       ];
     });
+  };
+
+
+  const handleLogoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please choose an image file.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Logo image must be smaller than 5 MB.");
+      e.target.value = "";
+      return;
+    }
+
+    setLogoUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success || !data.url) {
+        throw new Error(data.error || "Logo upload failed");
+      }
+
+      updateSetting("logo_url", data.url);
+
+      const saveRes = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          key: "logo_url",
+          value: data.url,
+        }),
+      });
+
+      if (!saveRes.ok) {
+        throw new Error("Logo uploaded but failed to save logo URL");
+      }
+
+      setSaved(true);
+
+      setTimeout(() => {
+        setSaved(false);
+      }, 2000);
+    } catch (err) {
+      console.error("Logo upload failed:", err);
+      alert("Logo upload failed");
+    } finally {
+      setLogoUploading(false);
+      e.target.value = "";
+    }
   };
 
   const handleSaveAll = async () => {
@@ -157,21 +225,6 @@ export default function AdminSettingsClient() {
       ],
     },
 
-    {
-      title: "Store Logo",
-      description:
-        "Logo displayed on your storefront and navigation.",
-      fields: [
-        {
-          key: "logo_url",
-          label: "Logo URL",
-          type: "url",
-          placeholder: "https://...",
-          description:
-            "For now paste the image URL here. Direct image upload will be added separately.",
-        },
-      ],
-    },
 
     {
       title: "WhatsApp",
@@ -306,10 +359,6 @@ export default function AdminSettingsClient() {
       return <MessageCircle size={20} />;
     }
 
-    if (title === "Store Logo") {
-      return <ImageIcon size={20} />;
-    }
-
     if (title === "Social Media") {
       return <Globe size={20} />;
     }
@@ -439,6 +488,76 @@ export default function AdminSettingsClient() {
 
       {/* Settings Sections */}
       <div className="space-y-8">
+        {/* Store Logo */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="mb-6 pb-4 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <ImageIcon size={20} className="text-accent" />
+              <h2 className="text-lg font-bold text-gray-900">
+                Store Logo
+              </h2>
+            </div>
+
+            <p className="text-sm text-gray-400 mt-1">
+              Upload the logo displayed on your storefront and navigation.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload Logo
+              </label>
+
+              <label
+                className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-colors ${
+                  logoUploading
+                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    : "bg-gray-900 hover:bg-black text-white cursor-pointer"
+                }`}
+              >
+                <ImageIcon size={18} />
+
+                {logoUploading
+                  ? "Uploading..."
+                  : "Choose Logo From PC"}
+
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                  onChange={handleLogoUpload}
+                  disabled={logoUploading}
+                  className="hidden"
+                />
+              </label>
+
+              <p className="text-xs text-gray-400 mt-2">
+                PNG, JPG, WEBP, GIF or SVG. Maximum 5 MB.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Current Logo
+              </label>
+
+              {getSetting("logo_url") ? (
+                <div className="border border-gray-200 rounded-xl bg-gray-50 p-5 min-h-[130px] flex items-center justify-center">
+                  <img
+                    src={getSetting("logo_url")}
+                    alt="Store Logo"
+                    className="max-h-24 max-w-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="border border-dashed border-gray-200 rounded-xl bg-gray-50 p-5 min-h-[130px] flex items-center justify-center text-sm text-gray-400">
+                  No logo uploaded yet
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {sections.map((section) => (
           <div
             key={section.title}
@@ -482,19 +601,6 @@ export default function AdminSettingsClient() {
                       {field.description}
                     </p>
                   )}
-
-                  {/* Logo Preview */}
-                  {field.key === "logo_url" &&
-                    getSetting("logo_url") && (
-                      <div className="mt-4 border border-gray-100 rounded-xl p-4 bg-gray-50">
-                        <p className="text-xs text-gray-400 mb-3">
-                          Logo Preview
-                        </p>
-
-                        <img
-                          src={getSetting(
-                            "logo_url"
-                          )}
                           alt="Store Logo"
                           className="max-h-24 max-w-[220px] object-contain"
                         />
