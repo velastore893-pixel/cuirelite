@@ -601,11 +601,6 @@ export default function AdminSettingsClient() {
                       {field.description}
                     </p>
                   )}
-                          alt="Store Logo"
-                          className="max-h-24 max-w-[220px] object-contain"
-                        />
-                      </div>
-                    )}
                 </div>
               ))}
             </div>
