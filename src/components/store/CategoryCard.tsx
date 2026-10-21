@@ -20,26 +20,41 @@ interface Props {
 export default function CategoryCard({ category }: Props) {
   const { language } = useStore();
 
+  const image =
+    category.image || "/images/placeholder.jpg";
+
   return (
     <Link
       href={`/products?category=${category.slug}`}
-      className="group relative h-40 sm:h-80 rounded-xl sm:rounded-2xl overflow-hidden block"
+      className="group relative rounded-xl sm:rounded-2xl overflow-hidden block bg-gray-50"
     >
-      <div
-        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
-        style={{
-          backgroundImage: `url(${category.image || "/images/placeholder.jpg"})`,
-        }}
+      {/* Image - automatic original ratio, no crop */}
+      <img
+        src={image}
+        alt={
+          language === "ar"
+            ? category.nameAr || category.name
+            : category.name
+        }
+        className="block w-full h-auto object-contain transition-transform duration-700 group-hover:scale-[1.02]"
+        loading="lazy"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-      <div className="relative h-full flex flex-col justify-end p-6">
+
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+
+      {/* Content */}
+      <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-6">
         <h3
-          className="text-2xl font-bold text-white mb-2"
+          className="text-lg sm:text-2xl font-bold text-white mb-1 sm:mb-2"
           style={{ fontFamily: "Playfair Display, serif" }}
         >
-          {language === "ar" ? category.nameAr || category.name : category.name}
+          {language === "ar"
+            ? category.nameAr || category.name
+            : category.name}
         </h3>
-        <div className="flex items-center gap-2 text-accent text-sm font-medium group-hover:gap-3 transition-all">
+
+        <div className="flex items-center gap-2 text-accent text-xs sm:text-sm font-medium group-hover:gap-3 transition-all">
           {language === "en" ? "Explore" : "استكشاف"}
           <ArrowRight size={16} />
         </div>
@@ -47,3 +62,4 @@ export default function CategoryCard({ category }: Props) {
     </Link>
   );
 }
+
