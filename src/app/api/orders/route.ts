@@ -155,7 +155,8 @@ export async function POST(request: NextRequest) {
         // ---- NORMAL MODE ------------------------------------------
         for (const item of items) {
           const prodResult = await db.execute(sql`
-            SELECT id, name, price, stock
+            SELECT id, name, price, stock,
+                   COALESCE(quantity_discount, 0) AS quantity_discount
             FROM products
             WHERE id = ${item.productId} AND is_active = true
             FOR UPDATE
@@ -185,10 +186,17 @@ export async function POST(request: NextRequest) {
           // Price ALWAYS from the database — never from the client
           const price = Math.round(Number(productRow.price) * 100) / 100;
 
-          // Quantity discount: every extra item after the first saves 50 DH.
-          // Example at 299 DH: 1 = 299, 2 = 548, 3 = 797.
+          // Per-product quantity discount from the database.
+          // Example: quantity_discount = 40 => qty 2 saves 40 DH, qty 3 saves 80 DH.
+          const perExtraItemDiscount = Math.max(
+            0,
+            Number(productRow.quantity_discount) || 0
+          );
           const baseLineTotal = Math.round(price * item.quantity * 100) / 100;
-          const quantityDiscount = item.quantity > 1 ? (item.quantity - 1) * 50 : 0;
+          const quantityDiscount =
+            item.quantity > 1
+              ? (item.quantity - 1) * perExtraItemDiscount
+              : 0;
           const finalLineTotal = Math.max(0, baseLineTotal - quantityDiscount);
 
           subtotal += finalLineTotal;
