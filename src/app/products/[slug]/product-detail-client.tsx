@@ -95,7 +95,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
   });
 
   useEffect(() => {
-    fetch("/api/admin/product-page-settings")
+    fetch("/api/settings", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => setPageSettings(data.settings || {}))
       .catch(() => {});
@@ -538,7 +538,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
                 </div>
               )}
 
-              {show("pp_show_stock") &&
+              {show("pp_show_stock_info") &&
                 product.stock !== null &&
                 product.stock < 10 && (
                   <p className="text-sm text-orange-500 mt-2">
