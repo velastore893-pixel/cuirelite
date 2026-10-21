@@ -27,6 +27,7 @@ interface Product {
   sizes: string[] | null;
   colors: { name: string; hex: string }[] | null;
   stock: number | null;
+  quantityDiscount: number | null;
   isActive: boolean | null;
   isFeatured: boolean | null;
   isNewArrival: boolean | null;
@@ -67,6 +68,7 @@ export default function AdminProductsClient() {
     mainCategoryId: "",
     categoryId: "",
     stock: "0",
+    quantityDiscount: "0",
     material: "",
     materialAr: "",
     images: "",
@@ -184,6 +186,7 @@ export default function AdminProductsClient() {
             : "";
         })(),
         stock: product.stock?.toString() || "0",
+        quantityDiscount: product.quantityDiscount?.toString() || "0",
         material: product.material || "",
         materialAr: product.materialAr || "",
         images: product.images?.join(", ") || "",
@@ -209,6 +212,7 @@ export default function AdminProductsClient() {
         mainCategoryId: "",
         categoryId: "",
         stock: "0",
+        quantityDiscount: "0",
         material: "",
         materialAr: "",
         images: "",
@@ -252,6 +256,16 @@ export default function AdminProductsClient() {
       ? parseInt(formData.categoryId)
       : selectedMainId;
 
+    const quantityDiscountValue = Number(formData.quantityDiscount || 0);
+
+    if (
+      !Number.isFinite(quantityDiscountValue) ||
+      quantityDiscountValue < 0
+    ) {
+      alert("Extra item discount must be 0 or greater.");
+      return;
+    }
+
     setSaving(true);
 
     const payload = {
@@ -265,6 +279,7 @@ export default function AdminProductsClient() {
       comparePrice: formData.comparePrice || null,
       categoryId: finalCategoryId,
       stock: parseInt(formData.stock as string),
+      quantityDiscount: Math.round(quantityDiscountValue),
       material: formData.material || null,
       materialAr: formData.materialAr || null,
       images: (() => {
@@ -571,7 +586,7 @@ export default function AdminProductsClient() {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
                   <input
@@ -596,10 +611,33 @@ export default function AdminProductsClient() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
                   <input
                     type="number"
+                    min="0"
                     value={formData.stock}
                     onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Extra Item Discount (DH)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.quantityDiscount}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        quantityDiscount: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent"
+                    placeholder="0"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Example: 40 = each extra item saves 40 DH.
+                  </p>
                 </div>
               </div>
 
