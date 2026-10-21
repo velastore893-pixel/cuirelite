@@ -44,10 +44,32 @@ export default function AdminSettingsClient() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/admin/settings");
-      const data = await res.json();
+      const [generalRes, productPageRes] = await Promise.all([
+        fetch("/api/admin/settings", { cache: "no-store" }),
+        fetch("/api/admin/product-page-settings", { cache: "no-store" }),
+      ]);
 
-      setSettings(data.settings || []);
+      const generalData = await generalRes.json();
+      const productPageData = await productPageRes.json();
+
+      const merged = new Map<string, Setting>();
+
+      for (const setting of generalData.settings || []) {
+        merged.set(setting.key, setting);
+      }
+
+      for (const [key, value] of Object.entries(
+        productPageData.settings || {}
+      )) {
+        merged.set(key, {
+          id: merged.get(key)?.id || 0,
+          key,
+          value: String(value),
+          updatedAt: merged.get(key)?.updatedAt || null,
+        });
+      }
+
+      setSettings(Array.from(merged.values()));
     } catch (err) {
       console.error("Failed to fetch settings:", err);
     } finally {
@@ -156,7 +178,11 @@ export default function AdminSettingsClient() {
 
     try {
       for (const setting of settings) {
-        const res = await fetch("/api/admin/settings", {
+        const endpoint = setting.key.startsWith("pp_")
+          ? "/api/admin/product-page-settings"
+          : "/api/admin/settings";
+
+        const res = await fetch(endpoint, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -321,6 +347,102 @@ export default function AdminSettingsClient() {
         {
           key: "hero_subtitle_ar",
           label: "Hero Subtitle (AR)",
+        },
+      ],
+    },
+
+    {
+      title: "Product Page",
+      description:
+        "Control what customers can see on the product page. Changes are saved to the live storefront settings.",
+      fields: [
+        {
+          key: "pp_show_size_selector",
+          label: "Show Size Selector",
+          type: "toggle",
+        },
+        {
+          key: "pp_show_color_selector",
+          label: "Show Color Selector",
+          type: "toggle",
+        },
+        {
+          key: "pp_show_quantity",
+          label: "Show Quantity Selector",
+          type: "toggle",
+        },
+        {
+          key: "pp_show_material",
+          label: "Show Material",
+          type: "toggle",
+        },
+        {
+          key: "pp_show_description",
+          label: "Show Description",
+          type: "toggle",
+        },
+        {
+          key: "pp_show_stock_info",
+          label: "Show Stock Information",
+          type: "toggle",
+          description:
+            "When disabled, customers will not see messages such as Only X left in stock.",
+        },
+        {
+          key: "pp_show_shipping_info",
+          label: "Show Shipping Information",
+          type: "toggle",
+        },
+        {
+          key: "pp_show_wishlist",
+          label: "Show Wishlist",
+          type: "toggle",
+        },
+        {
+          key: "pp_show_related_products",
+          label: "Show Related Products",
+          type: "toggle",
+        },
+        {
+          key: "pp_show_breadcrumbs",
+          label: "Show Breadcrumbs",
+          type: "toggle",
+        },
+        {
+          key: "pp_show_social_share",
+          label: "Show Social Share",
+          type: "toggle",
+        },
+        {
+          key: "pp_show_cod_badge",
+          label: "Show Cash on Delivery Badge",
+          type: "toggle",
+        },
+        {
+          key: "pp_show_free_shipping_badge",
+          label: "Show Free Shipping Badge",
+          type: "toggle",
+        },
+        {
+          key: "pp_show_guarantee_badge",
+          label: "Show Guarantee Badge",
+          type: "toggle",
+        },
+        {
+          key: "pp_order_form_title",
+          label: "Order Form Title",
+        },
+        {
+          key: "pp_order_form_subtitle",
+          label: "Order Form Subtitle",
+        },
+        {
+          key: "pp_order_button_text",
+          label: "Order Button Text",
+        },
+        {
+          key: "pp_order_success_message",
+          label: "Order Success Message",
         },
       ],
     },
