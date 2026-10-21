@@ -20,6 +20,7 @@ export async function GET() {
     }
 
     const allProducts = await db.select().from(products);
+
     return NextResponse.json({ products: allProducts });
   } catch (error) {
     console.error("Failed to fetch products:", error);
@@ -47,6 +48,11 @@ export async function POST(request: NextRequest) {
     const slug =
       body.slug || body.name.toLowerCase().replace(/\s+/g, "-");
 
+    const quantityDiscount = Math.max(
+      0,
+      Math.round(Number(body.quantityDiscount) || 0)
+    );
+
     const [product] = await db
       .insert(products)
       .values({
@@ -62,6 +68,10 @@ export async function POST(request: NextRequest) {
         sizes: body.sizes || [],
         colors: body.colors || [],
         stock: Number(body.stock) || 0,
+
+        // Per-product discount for every extra item after the first.
+        quantityDiscount,
+
         isActive: body.isActive !== false && body.isActive !== "false",
         isFeatured:
           body.isFeatured === true || body.isFeatured === "true",
@@ -72,7 +82,10 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    return NextResponse.json({ success: true, product });
+    return NextResponse.json({
+      success: true,
+      product,
+    });
   } catch (error) {
     console.error("Failed to create product:", error);
 
@@ -117,6 +130,10 @@ export async function PUT(request: NextRequest) {
       sizes?: string[];
       colors?: { name: string; hex: string }[];
       stock?: number;
+
+      // Per-product quantity discount.
+      quantityDiscount?: number;
+
       isActive?: boolean;
       isFeatured?: boolean;
       isNewArrival?: boolean;
@@ -127,43 +144,88 @@ export async function PUT(request: NextRequest) {
       updatedAt: new Date(),
     };
 
-    if (rawData.name !== undefined) updateObj.name = rawData.name;
-    if (rawData.nameAr !== undefined)
+    if (rawData.name !== undefined) {
+      updateObj.name = rawData.name;
+    }
+
+    if (rawData.nameAr !== undefined) {
       updateObj.nameAr = rawData.nameAr || null;
-    if (rawData.slug !== undefined) updateObj.slug = rawData.slug;
-    if (rawData.description !== undefined)
+    }
+
+    if (rawData.slug !== undefined) {
+      updateObj.slug = rawData.slug;
+    }
+
+    if (rawData.description !== undefined) {
       updateObj.description = rawData.description || null;
-    if (rawData.descriptionAr !== undefined)
+    }
+
+    if (rawData.descriptionAr !== undefined) {
       updateObj.descriptionAr = rawData.descriptionAr || null;
-    if (rawData.price !== undefined)
+    }
+
+    if (rawData.price !== undefined) {
       updateObj.price = String(rawData.price);
-    if (rawData.comparePrice !== undefined)
+    }
+
+    if (rawData.comparePrice !== undefined) {
       updateObj.comparePrice = rawData.comparePrice
         ? String(rawData.comparePrice)
         : null;
-    if (rawData.categoryId !== undefined)
+    }
+
+    if (rawData.categoryId !== undefined) {
       updateObj.categoryId = rawData.categoryId
         ? Number(rawData.categoryId)
         : null;
-    if (rawData.images !== undefined) updateObj.images = rawData.images;
-    if (rawData.sizes !== undefined) updateObj.sizes = rawData.sizes;
-    if (rawData.colors !== undefined) updateObj.colors = rawData.colors;
-    if (rawData.stock !== undefined)
+    }
+
+    if (rawData.images !== undefined) {
+      updateObj.images = rawData.images;
+    }
+
+    if (rawData.sizes !== undefined) {
+      updateObj.sizes = rawData.sizes;
+    }
+
+    if (rawData.colors !== undefined) {
+      updateObj.colors = rawData.colors;
+    }
+
+    if (rawData.stock !== undefined) {
       updateObj.stock = Number(rawData.stock) || 0;
-    if (rawData.isActive !== undefined)
+    }
+
+    if (rawData.quantityDiscount !== undefined) {
+      updateObj.quantityDiscount = Math.max(
+        0,
+        Math.round(Number(rawData.quantityDiscount) || 0)
+      );
+    }
+
+    if (rawData.isActive !== undefined) {
       updateObj.isActive =
         rawData.isActive === true || rawData.isActive === "true";
-    if (rawData.isFeatured !== undefined)
+    }
+
+    if (rawData.isFeatured !== undefined) {
       updateObj.isFeatured =
         rawData.isFeatured === true || rawData.isFeatured === "true";
-    if (rawData.isNewArrival !== undefined)
+    }
+
+    if (rawData.isNewArrival !== undefined) {
       updateObj.isNewArrival =
         rawData.isNewArrival === true ||
         rawData.isNewArrival === "true";
-    if (rawData.material !== undefined)
+    }
+
+    if (rawData.material !== undefined) {
       updateObj.material = rawData.material || null;
-    if (rawData.materialAr !== undefined)
+    }
+
+    if (rawData.materialAr !== undefined) {
       updateObj.materialAr = rawData.materialAr || null;
+    }
 
     const [updated] = await db
       .update(products)
@@ -206,9 +268,13 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await db.delete(products).where(eq(products.id, Number(id)));
+    await db
+      .delete(products)
+      .where(eq(products.id, Number(id)));
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+    });
   } catch (error) {
     console.error("Failed to delete product:", error);
 
@@ -218,3 +284,4 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+
