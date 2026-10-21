@@ -66,7 +66,9 @@ interface Category {
   slug: string;
   image: string | null;
   description: string | null;
+  parentId: number | null;
   isActive: boolean | null;
+  sortOrder: number | null;
   createdAt: Date | null;
 }
 
@@ -90,7 +92,7 @@ function StoreHome({
       shopByCategory: "Shop by Category",
 
       categoryDescription:
-        "Explore our curated collections of premium leather products",
+        "Explore our collections and discover designs made for every style",
 
       curatedForYou: "Curated for You",
 
@@ -113,7 +115,7 @@ function StoreHome({
       shopByCategory: "تسوقي حسب الفئة",
 
       categoryDescription:
-        "استكشفي مجموعاتنا المختارة من منتجات الجلد الفاخرة",
+        "اكتشف مجموعاتنا وتصاميمنا المتنوعة واختر ما يناسب أسلوبك",
 
       curatedForYou: "مختار لكِ",
 
@@ -134,6 +136,21 @@ function StoreHome({
   };
 
   const txt = text[language];
+
+  // Homepage should show ONLY active main categories.
+  // Subcategories (Wydad, Raja, Naruto, etc.) are shown only
+  // after entering their parent category.
+  const mainCategories = categories
+    .filter(
+      (category) =>
+        category.parentId == null &&
+        category.isActive !== false
+    )
+    .sort(
+      (a, b) =>
+        (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
+        a.name.localeCompare(b.name)
+    );
 
   const arrowClass =
     language === "ar"
@@ -158,7 +175,7 @@ function StoreHome({
       <FeaturesSection />
 
       {/* Categories */}
-      {categories.length > 0 && (
+      {mainCategories.length > 0 && (
         <section className="py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
@@ -178,7 +195,7 @@ function StoreHome({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-              {categories.map((category) => (
+              {mainCategories.map((category) => (
                 <CategoryCard
                   key={category.id}
                   category={category}
