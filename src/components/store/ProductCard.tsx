@@ -58,7 +58,7 @@ export default function ProductCard({ product }: Props) {
     >
       {/* Badges */}
       <div
-        className={`absolute top-2 sm:top-4 z-10 flex flex-col gap-1 sm:gap-2 ${
+        className={`absolute top-2 sm:top-4 z-20 flex flex-col gap-1 sm:gap-2 ${
           language === "ar"
             ? "right-2 sm:right-4"
             : "left-2 sm:left-4"
@@ -90,7 +90,7 @@ export default function ProductCard({ product }: Props) {
           e.stopPropagation();
           setIsWishlisted(!isWishlisted);
         }}
-        className={`absolute top-2 sm:top-4 z-10 w-7 h-7 sm:w-9 sm:h-9 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:bg-white hover:scale-110 ${
+        className={`absolute top-2 sm:top-4 z-20 w-7 h-7 sm:w-9 sm:h-9 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:bg-white hover:scale-110 ${
           language === "ar"
             ? "left-2 sm:left-4"
             : "right-2 sm:right-4"
@@ -116,27 +116,30 @@ export default function ProductCard({ product }: Props) {
         />
       </button>
 
-      {/* Image */}
+      {/* Image - automatic original ratio, no crop */}
       <Link
         href={`/products/${product.slug}`}
-        className="block aspect-[3/4] overflow-hidden relative"
+        className="block relative bg-gray-50"
       >
-        <div
-          className="product-image w-full h-full bg-cover bg-center"
-          style={{
-            backgroundImage: `url(${mainImage})`,
-          }}
+        <img
+          src={mainImage}
+          alt={
+            language === "ar"
+              ? product.nameAr || product.name
+              : product.name
+          }
+          className="block w-full h-auto object-contain"
+          loading="lazy"
         />
 
         {/* Order Button */}
-        <div className="absolute bottom-2 left-2 right-2 sm:bottom-4 sm:left-4 sm:right-4">
+        <div className="absolute bottom-2 left-2 right-2 sm:bottom-4 sm:left-4 sm:right-4 z-10">
           <button
             onClick={handleOrder}
             className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white py-2 sm:py-3 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg shadow-amber-500/20"
           >
             <Zap size={14} className="sm:hidden" />
             <Zap size={16} className="hidden sm:block" />
-
             {t("orderNow")}
           </button>
         </div>
@@ -234,3 +237,4 @@ export default function ProductCard({ product }: Props) {
     </div>
   );
 }
+
