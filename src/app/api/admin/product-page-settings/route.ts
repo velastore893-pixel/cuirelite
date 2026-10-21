@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_SETTINGS = {
+const DEFAULT_SETTINGS: Record<string, string> = {
   pp_show_size_selector: "true",
   pp_show_color_selector: "true",
   pp_show_quantity: "true",
@@ -26,6 +26,40 @@ const DEFAULT_SETTINGS = {
   pp_show_guarantee_badge: "true",
 };
 
+// Keep backward compatibility with the old admin key.
+function normalizeKey(key: string) {
+  if (key === "pp_show_stock") {
+    return "pp_show_stock_info";
+  }
+
+  return key;
+}
+
+async function upsertSetting(key: string, value: unknown) {
+  const normalizedKey = normalizeKey(key);
+  const normalizedValue = String(value);
+
+  const existing = await db
+    .select()
+    .from(storeSettings)
+    .where(eq(storeSettings.key, normalizedKey));
+
+  if (existing.length > 0) {
+    await db
+      .update(storeSettings)
+      .set({
+        value: normalizedValue,
+        updatedAt: new Date(),
+      })
+      .where(eq(storeSettings.key, normalizedKey));
+  } else {
+    await db.insert(storeSettings).values({
+      key: normalizedKey,
+      value: normalizedValue,
+    });
+  }
+}
+
 export async function GET() {
   try {
     const settings = await db.select().from(storeSettings);
@@ -33,9 +67,20 @@ export async function GET() {
     const settingsMap: Record<string, string> = {};
 
     for (const s of settings) {
-      if (s.key.startsWith("pp_")) {
-        settingsMap[s.key] = s.value || "";
+      if (!s.key.startsWith("pp_")) continue;
+
+      const normalizedKey = normalizeKey(s.key);
+
+      // If both the old and new stock keys exist,
+      // prefer the real/new key: pp_show_stock_info.
+      if (
+        s.key === "pp_show_stock" &&
+        settings.some((item) => item.key === "pp_show_stock_info")
+      ) {
+        continue;
       }
+
+      settingsMap[normalizedKey] = s.value || "";
     }
 
     const result = {
@@ -43,18 +88,24 @@ export async function GET() {
       ...settingsMap,
     };
 
-    return NextResponse.json({
-      settings: result,
-    });
+    return NextResponse.json(
+      { settings: result },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Failed to fetch product page settings:", error);
 
     return NextResponse.json(
-      {
-        settings: DEFAULT_SETTINGS,
-      },
+      { settings: DEFAULT_SETTINGS },
       {
         status: 500,
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
       }
     );
   }
@@ -71,35 +122,23 @@ export async function PUT(request: NextRequest) {
           success: false,
           error: "Key required",
         },
-        {
-          status: 400,
-        }
+        { status: 400 }
       );
     }
 
-    const existing = await db
-      .select()
-      .from(storeSettings)
-      .where(eq(storeSettings.key, key));
-
-    if (existing.length > 0) {
-      await db
-        .update(storeSettings)
-        .set({
-          value: String(value),
-          updatedAt: new Date(),
-        })
-        .where(eq(storeSettings.key, key));
-    } else {
-      await db.insert(storeSettings).values({
-        key,
-        value: String(value),
-      });
+    if (!String(key).startsWith("pp_")) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid product page setting key",
+        },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json({
-      success: true,
-    });
+    await upsertSetting(String(key), value);
+
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to update product page setting:", error);
 
@@ -108,9 +147,7 @@ export async function PUT(request: NextRequest) {
         success: false,
         error: String(error),
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
@@ -122,30 +159,10 @@ export async function POST(request: NextRequest) {
     for (const [key, value] of Object.entries(body)) {
       if (!key.startsWith("pp_")) continue;
 
-      const existing = await db
-        .select()
-        .from(storeSettings)
-        .where(eq(storeSettings.key, key));
-
-      if (existing.length > 0) {
-        await db
-          .update(storeSettings)
-          .set({
-            value: String(value),
-            updatedAt: new Date(),
-          })
-          .where(eq(storeSettings.key, key));
-      } else {
-        await db.insert(storeSettings).values({
-          key,
-          value: String(value),
-        });
-      }
+      await upsertSetting(key, value);
     }
 
-    return NextResponse.json({
-      success: true,
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to save product page settings:", error);
 
@@ -154,10 +171,9 @@ export async function POST(request: NextRequest) {
         success: false,
         error: String(error),
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
+
 
