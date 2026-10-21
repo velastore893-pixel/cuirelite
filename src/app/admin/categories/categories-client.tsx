@@ -10,7 +10,9 @@ interface Category {
   slug: string;
   description: string | null;
   image: string | null;
+  parentId: number | null;
   isActive: boolean | null;
+  sortOrder: number | null;
   createdAt: Date | null;
 }
 
@@ -27,6 +29,8 @@ export default function AdminCategoriesClient() {
     slug: "",
     description: "",
     image: "",
+    parentId: "",
+    sortOrder: "0",
     isActive: true,
   });
 
@@ -95,6 +99,8 @@ export default function AdminCategoriesClient() {
         slug: category.slug,
         description: category.description || "",
         image: category.image || "",
+        parentId: category.parentId == null ? "" : String(category.parentId),
+        sortOrder: String(category.sortOrder ?? 0),
         isActive: category.isActive ?? true,
       });
     } else {
@@ -105,6 +111,8 @@ export default function AdminCategoriesClient() {
         slug: "",
         description: "",
         image: "",
+        parentId: "",
+        sortOrder: "0",
         isActive: true,
       });
     }
@@ -120,6 +128,8 @@ export default function AdminCategoriesClient() {
       slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, "-"),
       description: formData.description || null,
       image: formData.image || null,
+      parentId: formData.parentId ? Number(formData.parentId) : null,
+      sortOrder: Number(formData.sortOrder || 0),
       isActive: formData.isActive,
     };
 
@@ -218,6 +228,15 @@ export default function AdminCategoriesClient() {
                     {category.nameAr}
                   </p>
                 )}
+
+                <p className="text-xs text-amber-600 font-medium mb-2">
+                  {category.parentId
+                    ? `Subcategory of: ${
+                        categories.find((c) => c.id === category.parentId)?.name || "Unknown"
+                      }`
+                    : "Main Category"}
+                </p>
+
                 <p className="text-sm text-gray-500 mb-4 line-clamp-2">
                   {category.description || "No description"}
                 </p>
@@ -259,6 +278,57 @@ export default function AdminCategoriesClient() {
               </button>
             </div>
             <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Parent Category
+                </label>
+                <select
+                  value={formData.parentId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, parentId: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent bg-white"
+                >
+                  <option value="">Main Category</option>
+                  {categories
+                    .filter(
+                      (category) =>
+                        category.parentId == null &&
+                        category.id !== editingCategory?.id
+                    )
+                    .sort(
+                      (a, b) =>
+                        (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+                    )
+                    .map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                </select>
+                <p className="text-xs text-gray-400 mt-1">
+                  Example: Wydad → Clubs, Naruto → Anime. Leave empty for a main category.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sort Order
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.sortOrder}
+                  onChange={(e) =>
+                    setFormData({ ...formData, sortOrder: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Smaller numbers appear first.
+                </p>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name (EN)</label>
                 <input
