@@ -103,6 +103,10 @@ export const products = pgTable("products", {
 
   stock: integer("stock").default(0),
 
+  // Discount applied for each extra item after the first.
+  // Example: 40 means qty 2 saves 40 DH, qty 3 saves 80 DH, etc.
+  quantityDiscount: integer("quantity_discount").default(0),
+
   sku: varchar("sku", {
     length: 100,
   }),
