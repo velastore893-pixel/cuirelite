@@ -33,6 +33,27 @@ interface Section {
   fields: Field[];
 }
 
+const PRODUCT_PAGE_DEFAULTS: Record<string, string> = {
+  pp_show_size_selector: "true",
+  pp_show_color_selector: "true",
+  pp_show_quantity: "true",
+  pp_show_material: "true",
+  pp_show_description: "true",
+  pp_show_stock_info: "true",
+  pp_show_shipping_info: "true",
+  pp_show_wishlist: "true",
+  pp_show_related_products: "false",
+  pp_show_breadcrumbs: "true",
+  pp_show_social_share: "false",
+  pp_order_form_title: "أكمل معلوماتك للطلب",
+  pp_order_form_subtitle: "سنتواصل معك قريباً لتأكيد الطلب",
+  pp_order_button_text: "تأكيد الطلب",
+  pp_order_success_message: "تم الطلب بنجاح! سنتواصل معك قريباً",
+  pp_show_cod_badge: "true",
+  pp_show_free_shipping_badge: "true",
+  pp_show_guarantee_badge: "true",
+};
+
 export default function AdminSettingsClient() {
   const [settings, setSettings] = useState<Setting[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,29 +65,27 @@ export default function AdminSettingsClient() {
     setLoading(true);
 
     try {
-      const [generalRes, productPageRes] = await Promise.all([
-        fetch("/api/admin/settings", { cache: "no-store" }),
-        fetch("/api/admin/product-page-settings", { cache: "no-store" }),
-      ]);
+      const res = await fetch("/api/admin/settings", {
+        cache: "no-store",
+      });
+      const data = await res.json();
 
-      const generalData = await generalRes.json();
-      const productPageData = await productPageRes.json();
-
+      const existingSettings: Setting[] = data.settings || [];
       const merged = new Map<string, Setting>();
 
-      for (const setting of generalData.settings || []) {
+      for (const setting of existingSettings) {
         merged.set(setting.key, setting);
       }
 
-      for (const [key, value] of Object.entries(
-        productPageData.settings || {}
-      )) {
-        merged.set(key, {
-          id: merged.get(key)?.id || 0,
-          key,
-          value: String(value),
-          updatedAt: merged.get(key)?.updatedAt || null,
-        });
+      for (const [key, value] of Object.entries(PRODUCT_PAGE_DEFAULTS)) {
+        if (!merged.has(key)) {
+          merged.set(key, {
+            id: 0,
+            key,
+            value,
+            updatedAt: null,
+          });
+        }
       }
 
       setSettings(Array.from(merged.values()));
@@ -178,11 +197,7 @@ export default function AdminSettingsClient() {
 
     try {
       for (const setting of settings) {
-        const endpoint = setting.key.startsWith("pp_")
-          ? "/api/admin/product-page-settings"
-          : "/api/admin/settings";
-
-        const res = await fetch(endpoint, {
+        const res = await fetch("/api/admin/settings", {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -354,7 +369,7 @@ export default function AdminSettingsClient() {
     {
       title: "Product Page",
       description:
-        "Control what customers can see on the product page. Changes are saved to the live storefront settings.",
+        "Control exactly what customers can see on the product page.",
       fields: [
         {
           key: "pp_show_size_selector",
@@ -386,7 +401,7 @@ export default function AdminSettingsClient() {
           label: "Show Stock Information",
           type: "toggle",
           description:
-            "When disabled, customers will not see messages such as Only X left in stock.",
+            "Disable this to hide messages such as Only X left in stock.",
         },
         {
           key: "pp_show_shipping_info",
