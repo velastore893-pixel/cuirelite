@@ -42,6 +42,9 @@ interface Category {
   name: string;
   nameAr: string | null;
   slug: string;
+  parentId: number | null;
+  isActive: boolean | null;
+  sortOrder: number | null;
 }
 
 export default function AdminProductsClient() {
@@ -61,6 +64,7 @@ export default function AdminProductsClient() {
     descriptionAr: "",
     price: "",
     comparePrice: "",
+    mainCategoryId: "",
     categoryId: "",
     stock: "0",
     material: "",
@@ -162,7 +166,23 @@ export default function AdminProductsClient() {
         descriptionAr: product.descriptionAr || "",
         price: product.price,
         comparePrice: product.comparePrice || "",
-        categoryId: product.categoryId?.toString() || "",
+        mainCategoryId: (() => {
+          const selectedCategory = categories.find(
+            (cat) => cat.id === product.categoryId
+          );
+          if (!selectedCategory) return "";
+          return selectedCategory.parentId
+            ? selectedCategory.parentId.toString()
+            : selectedCategory.id.toString();
+        })(),
+        categoryId: (() => {
+          const selectedCategory = categories.find(
+            (cat) => cat.id === product.categoryId
+          );
+          return selectedCategory?.parentId
+            ? selectedCategory.id.toString()
+            : "";
+        })(),
         stock: product.stock?.toString() || "0",
         material: product.material || "",
         materialAr: product.materialAr || "",
@@ -186,6 +206,7 @@ export default function AdminProductsClient() {
         descriptionAr: "",
         price: "",
         comparePrice: "",
+        mainCategoryId: "",
         categoryId: "",
         stock: "0",
         material: "",
@@ -205,7 +226,34 @@ export default function AdminProductsClient() {
   };
 
   const handleSave = async () => {
+    const selectedMainId = formData.mainCategoryId
+      ? parseInt(formData.mainCategoryId)
+      : null;
+
+    const childCategories = selectedMainId
+      ? categories.filter(
+          (cat) =>
+            cat.parentId === selectedMainId &&
+            cat.isActive !== false
+        )
+      : [];
+
+    if (!selectedMainId) {
+      alert("Please select a main category.");
+      return;
+    }
+
+    if (childCategories.length > 0 && !formData.categoryId) {
+      alert("Please select a subcategory.");
+      return;
+    }
+
+    const finalCategoryId = formData.categoryId
+      ? parseInt(formData.categoryId)
+      : selectedMainId;
+
     setSaving(true);
+
     const payload = {
       ...(editingProduct ? { id: editingProduct.id } : {}),
       name: formData.name,
@@ -215,7 +263,7 @@ export default function AdminProductsClient() {
       descriptionAr: formData.descriptionAr || null,
       price: formData.price,
       comparePrice: formData.comparePrice || null,
-      categoryId: formData.categoryId ? parseInt(formData.categoryId) : null,
+      categoryId: finalCategoryId,
       stock: parseInt(formData.stock as string),
       material: formData.material || null,
       materialAr: formData.materialAr || null,
@@ -557,19 +605,109 @@ export default function AdminProductsClient() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Main Category
+                  </label>
+
                   <select
-                    value={formData.categoryId}
-                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent"
+                    value={formData.mainCategoryId}
+                    onChange={(e) => {
+                      const mainId = e.target.value;
+
+                      setFormData({
+                        ...formData,
+                        mainCategoryId: mainId,
+                        categoryId: "",
+                      });
+                    }}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent bg-white"
                   >
-                    <option value="">Select category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
+                    <option value="">Select main category</option>
+
+                    {categories
+                      .filter(
+                        (cat) =>
+                          cat.parentId == null &&
+                          cat.isActive !== false
+                      )
+                      .sort(
+                        (a, b) =>
+                          (a.sortOrder ?? 0) -
+                            (b.sortOrder ?? 0) ||
+                          a.name.localeCompare(b.name)
+                      )
+                      .map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
                   </select>
+
+                  {formData.mainCategoryId &&
+                    categories.some(
+                      (cat) =>
+                        cat.parentId ===
+                          parseInt(formData.mainCategoryId) &&
+                        cat.isActive !== false
+                    ) && (
+                      <div className="mt-3">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Subcategory
+                        </label>
+
+                        <select
+                          value={formData.categoryId}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              categoryId: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent bg-white"
+                        >
+                          <option value="">
+                            Select subcategory
+                          </option>
+
+                          {categories
+                            .filter(
+                              (cat) =>
+                                cat.parentId ===
+                                  parseInt(
+                                    formData.mainCategoryId
+                                  ) &&
+                                cat.isActive !== false
+                            )
+                            .sort(
+                              (a, b) =>
+                                (a.sortOrder ?? 0) -
+                                  (b.sortOrder ?? 0) ||
+                                a.name.localeCompare(b.name)
+                            )
+                            .map((cat) => (
+                              <option
+                                key={cat.id}
+                                value={cat.id}
+                              >
+                                {cat.name}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    )}
+
+                  {formData.mainCategoryId &&
+                    !categories.some(
+                      (cat) =>
+                        cat.parentId ===
+                          parseInt(formData.mainCategoryId) &&
+                        cat.isActive !== false
+                    ) && (
+                      <p className="text-xs text-gray-400 mt-2">
+                        This main category has no subcategories,
+                        so the product will be assigned directly to it.
+                      </p>
+                    )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Material</label>
