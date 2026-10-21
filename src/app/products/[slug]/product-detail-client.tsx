@@ -538,11 +538,13 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
                 </div>
               )}
 
-              {product.stock !== null && product.stock < 10 && (
-                <p className="text-sm text-orange-500 mt-2">
-                  {t("onlyLeft", { count: product.stock })}
-                </p>
-              )}
+              {show("pp_show_stock") &&
+                product.stock !== null &&
+                product.stock < 10 && (
+                  <p className="text-sm text-orange-500 mt-2">
+                    {t("onlyLeft", { count: product.stock })}
+                  </p>
+                )}
             </div>)}
 
             {/* Divider */}
