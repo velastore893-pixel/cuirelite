@@ -640,9 +640,15 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
             <div className="border-t border-gray-200 my-6" />
 
             {/* ===== ORDER FORM - Directly Below ===== */}
-            <div id="order">
+            <div
+              id="order"
+              className="relative rounded-2xl border-2 border-amber-200 bg-white p-5 sm:p-6 shadow-lg shadow-amber-500/10"
+            >
+              {/* Decorative top accent */}
+              <div className="absolute top-0 left-6 right-6 h-1 rounded-b-full bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600" />
+
               {/* Form Header */}
-              <div className="mb-5">
+              <div className="mb-5 pt-1">
                 <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full text-xs font-bold mb-3">
                   <Zap size={12} />
                   {t("orderNow")}
