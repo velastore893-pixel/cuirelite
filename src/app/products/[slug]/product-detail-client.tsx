@@ -276,31 +276,44 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Images */}
-          <div>
-            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 mb-4">
+          <div className="w-full">
+            <div className="relative w-full rounded-2xl overflow-hidden bg-gray-100 mb-4 flex items-center justify-center">
               {product.isNewArrival && (
                 <span className="absolute top-4 left-4 z-10 bg-accent text-white text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-full">
                   {t("newArrival")}
                 </span>
               )}
-              <div
-                className="w-full h-full bg-cover bg-center"
-                style={{ backgroundImage: `url(${images[selectedImage]})` }}
+
+              <img
+                src={images[selectedImage]}
+                alt={
+                  language === "ar"
+                    ? product.nameAr || product.name
+                    : product.name
+                }
+                className="block w-full h-auto max-h-[850px] object-contain mx-auto"
               />
             </div>
+
             {images.length > 1 && (
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
                 {images.map((img, index) => (
                   <button
                     key={index}
+                    type="button"
                     onClick={() => setSelectedImage(index)}
-                    className={`aspect-square rounded-xl overflow-hidden bg-cover bg-center border-2 transition-all ${
+                    className={`aspect-square rounded-xl overflow-hidden bg-gray-100 border-2 transition-all ${
                       selectedImage === index
                         ? "border-accent"
                         : "border-transparent hover:border-gray-300"
                     }`}
-                    style={{ backgroundImage: `url(${img})` }}
-                  />
+                  >
+                    <img
+                      src={img}
+                      alt={`${product.name} ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
                 ))}
               </div>
             )}
