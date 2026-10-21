@@ -38,6 +38,7 @@ interface Product {
   colors: { name: string; hex: string }[] | null;
   sizes: string[] | null;
   stock: number | null;
+  quantityDiscount: number | null;
   description: string | null;
   descriptionAr: string | null;
   material: string | null;
@@ -142,11 +143,17 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
     ? parseFloat(getSelectedOfferData()!.price)
     : parseFloat(product.price);
 
-  // Quantity discount: every extra item after the first saves 50 DH.
+  // Per-product quantity discount configured from Admin.
+  // Example: quantityDiscount = 40 => qty 2 saves 40 DH, qty 3 saves 80 DH.
   // Product offers keep their own pricing and do not receive this extra discount.
+  const perExtraItemDiscount = Math.max(
+    0,
+    Number(product.quantityDiscount ?? 0)
+  );
+
   const quantityDiscount =
     !getSelectedOfferData() && orderQuantity > 1
-      ? (orderQuantity - 1) * 50
+      ? (orderQuantity - 1) * perExtraItemDiscount
       : 0;
 
   const orderSubtotal = orderPrice * orderQuantity;
@@ -527,13 +534,15 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
                 </button>
               </div>
 
-              {quantity > 1 && (
+              {quantity > 1 && perExtraItemDiscount > 0 && (
                 <div className="mt-3">
                   <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-xl text-sm font-bold">
                     {t("youSaved", { amount: quantityDiscount.toFixed(0) })}
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    {t("extraItemDiscount")}
+                    {language === "ar"
+                      ? `خصم ${perExtraItemDiscount.toFixed(0)} درهم على كل قطعة إضافية`
+                      : `${perExtraItemDiscount.toFixed(0)} DH off each extra item`}
                   </p>
                 </div>
               )}
