@@ -88,6 +88,9 @@ export const products = pgTable("products", {
     .$type<string[]>()
     .default([]),
 
+  // Optional product video shown inside the product gallery.
+  videoUrl: text("video_url"),
+
   sizes: jsonb("sizes")
     .$type<string[]>()
     .default([]),
