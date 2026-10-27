@@ -15,6 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import ImageManager from "@/components/admin/ImageManager";
+import { createClient } from "@supabase/supabase-js";
 
 interface Product {
   id: number;
@@ -24,6 +25,7 @@ interface Product {
   price: string;
   comparePrice: string | null;
   images: string[] | null;
+  videoUrl: string | null;
   sizes: string[] | null;
   colors: { name: string; hex: string }[] | null;
   stock: number | null;
@@ -57,6 +59,7 @@ export default function AdminProductsClient() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     nameAr: "",
@@ -73,6 +76,7 @@ export default function AdminProductsClient() {
     materialAr: "",
     images: "",
     mainImage: "",
+    videoUrl: "",
     sizes: "",
     colors: "[]",
     customColorHex: "#000000",
@@ -143,6 +147,91 @@ export default function AdminProductsClient() {
     }
   };
 
+
+  const handleVideoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("video/")) {
+      alert("Please choose a video file.");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > 100 * 1024 * 1024) {
+      alert("Video must be smaller than 100 MB.");
+      e.target.value = "";
+      return;
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !anonKey) {
+      alert("Supabase public environment variables are missing.");
+      e.target.value = "";
+      return;
+    }
+
+    setUploadingVideo(true);
+
+    try {
+      const signRes = await fetch("/api/upload-video", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type,
+          size: file.size,
+        }),
+      });
+
+      const signData = await signRes.json();
+
+      if (
+        !signRes.ok ||
+        !signData.success ||
+        !signData.bucket ||
+        !signData.path ||
+        !signData.token ||
+        !signData.publicUrl
+      ) {
+        throw new Error(signData.error || "Could not prepare video upload.");
+      }
+
+      const supabase = createClient(supabaseUrl, anonKey);
+
+      const { error: uploadError } = await supabase.storage
+        .from(signData.bucket)
+        .uploadToSignedUrl(signData.path, signData.token, file, {
+          contentType: file.type,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        videoUrl: signData.publicUrl,
+      }));
+    } catch (err) {
+      console.error("Video upload failed:", err);
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Failed to upload product video."
+      );
+    } finally {
+      setUploadingVideo(false);
+      e.target.value = "";
+    }
+  };
+
   const removeImage = (index: number) => {
     const currentImages = formData.images
       ? formData.images.split(",").map((s: string) => s.trim()).filter(Boolean)
@@ -191,6 +280,7 @@ export default function AdminProductsClient() {
         materialAr: product.materialAr || "",
         images: product.images?.join(", ") || "",
         mainImage: product.images?.[0] || "",
+        videoUrl: product.videoUrl || "",
         sizes: product.sizes?.join(", ") || "",
         colors: JSON.stringify(product.colors || []),
         customColorHex: "#000000",
@@ -217,6 +307,7 @@ export default function AdminProductsClient() {
         materialAr: "",
         images: "",
         mainImage: "",
+        videoUrl: "",
         sizes: "",
         colors: "[]",
         customColorHex: "#000000",
@@ -282,6 +373,7 @@ export default function AdminProductsClient() {
       quantityDiscount: Math.round(quantityDiscountValue),
       material: formData.material || null,
       materialAr: formData.materialAr || null,
+      videoUrl: formData.videoUrl || null,
       images: (() => {
         const gallery = formData.images
           ? (formData.images as string).split(",").map((s) => s.trim()).filter(Boolean)
@@ -787,6 +879,78 @@ export default function AdminProductsClient() {
                   }
                   disabled={saving}
                 />
+              </div>
+
+              {/* Product Video */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  فيديو المنتج
+                </label>
+
+                {formData.videoUrl ? (
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                    <video
+                      src={formData.videoUrl}
+                      controls
+                      preload="metadata"
+                      className="w-full max-h-[360px] rounded-lg bg-black object-contain"
+                    />
+
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <p className="text-xs text-gray-500 truncate">
+                        الفيديو مرفوع وجاهز للظهور داخل معرض المنتج
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            videoUrl: "",
+                          }))
+                        }
+                        className="shrink-0 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50"
+                      >
+                        حذف الفيديو
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label
+                    className={`flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center transition-colors ${
+                      uploadingVideo
+                        ? "border-amber-300 bg-amber-50 cursor-wait"
+                        : "border-gray-300 bg-gray-50 hover:border-amber-400 hover:bg-amber-50/40"
+                    }`}
+                  >
+                    {uploadingVideo ? (
+                      <>
+                        <Loader2 size={24} className="mb-2 animate-spin text-amber-500" />
+                        <span className="text-sm font-semibold text-gray-700">
+                          جاري رفع الفيديو...
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={24} className="mb-2 text-gray-400" />
+                        <span className="text-sm font-semibold text-gray-700">
+                          Upload Product Video
+                        </span>
+                        <span className="mt-1 text-xs text-gray-400">
+                          MP4 / WebM / MOV — حتى 100 MB
+                        </span>
+                      </>
+                    )}
+
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/quicktime,video/*"
+                      onChange={handleVideoUpload}
+                      disabled={uploadingVideo || saving}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
 
               {/* Sizes */}
