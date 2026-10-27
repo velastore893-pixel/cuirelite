@@ -25,6 +25,7 @@ import {
   Loader2,
   CheckCircle,
   Package,
+  Play,
 } from "lucide-react";
 
 interface Product {
@@ -35,6 +36,7 @@ interface Product {
   price: string;
   comparePrice: string | null;
   images: string[] | null;
+  videoUrl: string | null;
   colors: { name: string; hex: string }[] | null;
   sizes: string[] | null;
   stock: number | null;
@@ -67,6 +69,7 @@ interface Props {
 function ProductDetailContent({ product, category, relatedProducts }: Props) {
   const { language, settings, t } = useStore();
   const [selectedImage, setSelectedImage] = useState(0);
+  const [showVideo, setShowVideo] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
@@ -282,46 +285,99 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
       {/* Product Detail */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Images */}
+          {/* Product media gallery: images + video */}
           <div className="w-full">
             <div className="relative w-full rounded-2xl overflow-hidden bg-gray-100 mb-4 flex items-center justify-center">
-              {product.isNewArrival && (
+              {product.isNewArrival && !showVideo && (
                 <span className="absolute top-4 left-4 z-10 bg-accent text-white text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-full">
                   {t("newArrival")}
                 </span>
               )}
 
-              <img
-                src={images[selectedImage]}
-                alt={
-                  language === "ar"
-                    ? product.nameAr || product.name
-                    : product.name
-                }
-                className="block w-full h-auto max-h-[850px] object-contain mx-auto"
-              />
+              {showVideo && product.videoUrl ? (
+                <video
+                  key={product.videoUrl}
+                  src={product.videoUrl}
+                  controls
+                  autoPlay
+                  playsInline
+                  preload="metadata"
+                  className="block w-full h-auto max-h-[850px] object-contain bg-black mx-auto"
+                >
+                  Your browser does not support video playback.
+                </video>
+              ) : (
+                <img
+                  src={images[selectedImage]}
+                  alt={
+                    language === "ar"
+                      ? product.nameAr || product.name
+                      : product.name
+                  }
+                  className="block w-full h-auto max-h-[850px] object-contain mx-auto"
+                />
+              )}
             </div>
 
-            {images.length > 1 && (
+            {(images.length > 1 || product.videoUrl) && (
               <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
                 {images.map((img, index) => (
                   <button
-                    key={index}
+                    key={`image-${index}`}
                     type="button"
-                    onClick={() => setSelectedImage(index)}
+                    onClick={() => {
+                      setSelectedImage(index);
+                      setShowVideo(false);
+                    }}
                     className={`aspect-square rounded-xl overflow-hidden bg-gray-100 border-2 transition-all ${
-                      selectedImage === index
+                      !showVideo && selectedImage === index
                         ? "border-accent"
                         : "border-transparent hover:border-gray-300"
                     }`}
+                    aria-label={`Show product image ${index + 1}`}
                   >
                     <img
                       src={img}
                       alt={`${product.name} ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   </button>
                 ))}
+
+                {product.videoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setShowVideo(true)}
+                    className={`relative aspect-square rounded-xl overflow-hidden bg-black border-2 transition-all ${
+                      showVideo
+                        ? "border-accent"
+                        : "border-transparent hover:border-gray-300"
+                    }`}
+                    aria-label={
+                      language === "ar"
+                        ? "تشغيل فيديو المنتج"
+                        : "Play product video"
+                    }
+                  >
+                    <video
+                      src={product.videoUrl}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      className="absolute inset-0 w-full h-full object-cover opacity-70"
+                    />
+
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-black shadow-lg">
+                        <Play size={20} className="ml-0.5 fill-current" />
+                      </span>
+                    </span>
+
+                    <span className="absolute bottom-1.5 left-1.5 right-1.5 rounded-md bg-black/65 px-1.5 py-1 text-center text-[9px] font-bold uppercase tracking-wide text-white">
+                      {language === "ar" ? "فيديو" : "Video"}
+                    </span>
+                  </button>
+                )}
               </div>
             )}
           </div>
