@@ -25,10 +25,23 @@ export async function POST(request: NextRequest) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const publicAnonKey =
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      process.env.SUPABASE_ANON_KEY;
 
-    if (!supabaseUrl || !serviceKey) {
+    if (!supabaseUrl || !serviceKey || !publicAnonKey) {
+      console.error("Missing Supabase video upload environment variables", {
+        hasUrl: !!supabaseUrl,
+        hasServiceKey: !!serviceKey,
+        hasPublicAnonKey: !!publicAnonKey,
+      });
+
       return NextResponse.json(
-        { success: false, error: "Supabase storage is not configured." },
+        {
+          success: false,
+          error:
+            "Supabase video upload is not fully configured on the server.",
+        },
         { status: 500 }
       );
     }
@@ -106,6 +119,12 @@ export async function POST(request: NextRequest) {
       path,
       token: signed.token,
       publicUrl: publicData.publicUrl,
+
+      // Public browser-safe values returned at runtime.
+      // This avoids relying on NEXT_PUBLIC_* being embedded
+      // in the client bundle during build time.
+      supabaseUrl,
+      publicAnonKey,
     });
   } catch (error) {
     console.error("Video upload signing failed:", error);
@@ -116,4 +135,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
 
