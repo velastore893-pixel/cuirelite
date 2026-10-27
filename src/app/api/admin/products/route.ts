@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
         comparePrice: body.comparePrice ? String(body.comparePrice) : null,
         categoryId: body.categoryId ? Number(body.categoryId) : null,
         images: body.images || [],
+        videoUrl: body.videoUrl || null,
         sizes: body.sizes || [],
         colors: body.colors || [],
         stock: Number(body.stock) || 0,
@@ -127,6 +128,7 @@ export async function PUT(request: NextRequest) {
       comparePrice?: string | null;
       categoryId?: number | null;
       images?: string[];
+      videoUrl?: string | null;
       sizes?: string[];
       colors?: { name: string; hex: string }[];
       stock?: number;
@@ -182,6 +184,10 @@ export async function PUT(request: NextRequest) {
 
     if (rawData.images !== undefined) {
       updateObj.images = rawData.images;
+    }
+
+    if (rawData.videoUrl !== undefined) {
+      updateObj.videoUrl = rawData.videoUrl || null;
     }
 
     if (rawData.sizes !== undefined) {
@@ -284,4 +290,5 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+
 
