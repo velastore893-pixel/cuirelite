@@ -30,17 +30,24 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !serviceKey || !publicAnonKey) {
+      const missing: string[] = [];
+
+      if (!supabaseUrl) missing.push("NEXT_PUBLIC_SUPABASE_URL");
+      if (!serviceKey) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+      if (!publicAnonKey) {
+        missing.push(
+          "NEXT_PUBLIC_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY"
+        );
+      }
+
       console.error("Missing Supabase video upload environment variables", {
-        hasUrl: !!supabaseUrl,
-        hasServiceKey: !!serviceKey,
-        hasPublicAnonKey: !!publicAnonKey,
+        missing,
       });
 
       return NextResponse.json(
         {
           success: false,
-          error:
-            "Supabase video upload is not fully configured on the server.",
+          error: `Missing server environment variable: ${missing.join(", ")}`,
         },
         { status: 500 }
       );
