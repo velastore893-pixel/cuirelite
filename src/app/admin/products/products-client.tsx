@@ -166,15 +166,6 @@ export default function AdminProductsClient() {
       return;
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !anonKey) {
-      alert("Supabase public environment variables are missing.");
-      e.target.value = "";
-      return;
-    }
-
     setUploadingVideo(true);
 
     try {
@@ -198,12 +189,17 @@ export default function AdminProductsClient() {
         !signData.bucket ||
         !signData.path ||
         !signData.token ||
-        !signData.publicUrl
+        !signData.publicUrl ||
+        !signData.supabaseUrl ||
+        !signData.publicAnonKey
       ) {
         throw new Error(signData.error || "Could not prepare video upload.");
       }
 
-      const supabase = createClient(supabaseUrl, anonKey);
+      const supabase = createClient(
+        signData.supabaseUrl,
+        signData.publicAnonKey
+      );
 
       const { error: uploadError } = await supabase.storage
         .from(signData.bucket)
