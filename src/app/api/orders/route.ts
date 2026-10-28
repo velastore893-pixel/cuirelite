@@ -318,6 +318,80 @@ export async function POST(request: NextRequest) {
 
       await db.execute(sql`COMMIT`);
 
+      // ---- Telegram notification (non-blocking, optional) --------
+      try {
+        const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
+        const telegramChatId = process.env.TELEGRAM_CHAT_ID;
+
+        if (telegramToken && telegramChatId) {
+          const itemsText = lineItems
+            .map((item) => {
+              const details = [
+                item.size ? `Size: ${item.size}` : "",
+                item.color ? `Color: ${item.color}` : "",
+              ]
+                .filter(Boolean)
+                .join(" | ");
+
+              return `• ${item.name} × ${item.quantity}${
+                details ? ` (${details})` : ""
+              }`;
+            })
+            .join("\n");
+
+          const telegramMessage = [
+            "🛒 طلب جديد فالسيت",
+            "",
+            `🧾 رقم الطلب: ${orderNumber}`,
+            `👤 الزبون: ${customerName}`,
+            `📞 الهاتف: ${customerPhone}`,
+            `📍 المدينة: ${city}`,
+            `🏠 العنوان: ${shippingAddress}`,
+            "",
+            "📦 المنتجات:",
+            itemsText,
+            "",
+            `💵 المجموع: ${total} MAD`,
+            shippingCost > 0
+              ? `🚚 التوصيل: ${shippingCost} MAD`
+              : "🚚 التوصيل: مجاني",
+            discount > 0
+              ? `🏷️ التخفيض: ${discount} MAD`
+              : "",
+            body.notes ? `📝 ملاحظة: ${String(body.notes)}` : "",
+          ]
+            .filter(Boolean)
+            .join("\n");
+
+          const telegramRes = await fetch(
+            `https://api.telegram.org/bot${telegramToken}/sendMessage`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                chat_id: telegramChatId,
+                text: telegramMessage,
+              }),
+            }
+          );
+
+          if (!telegramRes.ok) {
+            const telegramError = await telegramRes.text();
+            console.error(
+              "Telegram notification failed (order still saved):",
+              telegramError
+            );
+          }
+        }
+      } catch (telegramErr) {
+        console.error(
+          "Telegram notification failed (order still saved):",
+          telegramErr
+        );
+      }
+
       // ---- Google Sheets sync (non-blocking, optional) ----------
       try {
         const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
