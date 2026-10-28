@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
 import {
   Save,
   CheckCircle,
@@ -10,6 +11,10 @@ import {
   Image as ImageIcon,
   Camera,
   Globe,
+  Upload,
+  Loader2,
+  Trash2,
+  Video,
 } from "lucide-react";
 
 interface Setting {
@@ -60,6 +65,7 @@ export default function AdminSettingsClient() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [heroVideoUploading, setHeroVideoUploading] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -191,6 +197,146 @@ export default function AdminSettingsClient() {
       e.target.value = "";
     }
   };
+
+
+  const saveSingleSetting = async (key: string, value: string) => {
+    updateSetting(key, value);
+
+    const res = await fetch("/api/admin/settings", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ key, value }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(data.error || `Failed to save ${key}`);
+    }
+  };
+
+  const handleHeroVideoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("video/")) {
+      alert("Please choose a video file.");
+      e.target.value = "";
+      return;
+    }
+
+    // Supabase project currently has a 50 MB storage limit.
+    if (file.size > 49 * 1024 * 1024) {
+      alert("Hero video must be smaller than 49 MB.");
+      e.target.value = "";
+      return;
+    }
+
+    setHeroVideoUploading(true);
+
+    try {
+      const signRes = await fetch("/api/upload-video", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type,
+          size: file.size,
+        }),
+      });
+
+      const signData = await signRes.json();
+
+      if (
+        !signRes.ok ||
+        !signData.success ||
+        !signData.bucket ||
+        !signData.path ||
+        !signData.token ||
+        !signData.publicUrl ||
+        !signData.supabaseUrl ||
+        !signData.publicAnonKey
+      ) {
+        throw new Error(
+          signData.error || "Could not prepare hero video upload."
+        );
+      }
+
+      const supabase = createClient(
+        signData.supabaseUrl,
+        signData.publicAnonKey
+      );
+
+      const { error: uploadError } = await supabase.storage
+        .from(signData.bucket)
+        .uploadToSignedUrl(
+          signData.path,
+          signData.token,
+          file,
+          {
+            contentType: file.type,
+          }
+        );
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      await saveSingleSetting(
+        "hero_slider_video_url",
+        signData.publicUrl
+      );
+      await saveSingleSetting(
+        "hero_slider_video_enabled",
+        "true"
+      );
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error("Hero video upload failed:", err);
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Hero video upload failed."
+      );
+    } finally {
+      setHeroVideoUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveHeroVideo = async () => {
+    if (!getSetting("hero_slider_video_url")) return;
+
+    const confirmed = window.confirm(
+      "Remove the hero slider video?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await saveSingleSetting("hero_slider_video_url", "");
+      await saveSingleSetting(
+        "hero_slider_video_enabled",
+        "false"
+      );
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error("Failed to remove hero video:", err);
+      alert("Failed to remove hero video.");
+    }
+  };
+
 
   const handleSaveAll = async () => {
     setSaving(true);
@@ -689,6 +835,130 @@ export default function AdminSettingsClient() {
               ) : (
                 <div className="border border-dashed border-gray-200 rounded-xl bg-gray-50 p-5 min-h-[130px] flex items-center justify-center text-sm text-gray-400">
                   No logo uploaded yet
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+
+        {/* Hero Slider Video */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="mb-6 pb-4 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <Video size={20} className="text-accent" />
+              <h2 className="text-lg font-bold text-gray-900">
+                Hero Slider Video
+              </h2>
+            </div>
+
+            <p className="text-sm text-gray-400 mt-1">
+              Upload a brand animation that starts automatically when visitors open the store.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload Video
+              </label>
+
+              <label
+                className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-colors ${
+                  heroVideoUploading
+                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    : "bg-gray-900 hover:bg-black text-white cursor-pointer"
+                }`}
+              >
+                {heroVideoUploading ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <Upload size={18} />
+                )}
+
+                {heroVideoUploading
+                  ? "Uploading..."
+                  : "Choose Hero Video From PC"}
+
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm,video/quicktime,video/*"
+                  onChange={handleHeroVideoUpload}
+                  disabled={heroVideoUploading}
+                  className="hidden"
+                />
+              </label>
+
+              <p className="text-xs text-gray-400 mt-2">
+                MP4 / WebM / MOV. Maximum 49 MB. Video starts muted automatically.
+              </p>
+
+              <div className="mt-4 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateSetting(
+                      "hero_slider_video_enabled",
+                      getSetting("hero_slider_video_enabled") === "true"
+                        ? "false"
+                        : "true"
+                    )
+                  }
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                    getSetting("hero_slider_video_enabled") === "true"
+                      ? "bg-green-500"
+                      : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                      getSetting("hero_slider_video_enabled") === "true"
+                        ? "translate-x-6"
+                        : "translate-x-1"
+                    }`}
+                  />
+                </button>
+
+                <span className="text-sm font-medium text-gray-700">
+                  {getSetting("hero_slider_video_enabled") === "true"
+                    ? "Video enabled"
+                    : "Video disabled"}
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-400 mt-2">
+                After changing the toggle, click Save All.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Current Hero Video
+              </label>
+
+              {getSetting("hero_slider_video_url") ? (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                  <video
+                    src={getSetting("hero_slider_video_url")}
+                    controls
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="w-full max-h-[360px] rounded-lg bg-black object-contain"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleRemoveHeroVideo}
+                    className="mt-3 inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 size={15} />
+                    Remove Video
+                  </button>
+                </div>
+              ) : (
+                <div className="border border-dashed border-gray-200 rounded-xl bg-gray-50 p-5 min-h-[160px] flex items-center justify-center text-sm text-gray-400">
+                  No hero video uploaded yet
                 </div>
               )}
             </div>
