@@ -21,17 +21,66 @@ interface Props {
 
 export default function HeroSection({ slides }: Props) {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [heroVideoUrl, setHeroVideoUrl] = useState("");
+  const [heroVideoEnabled, setHeroVideoEnabled] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const { language } = useStore();
 
   useEffect(() => {
-    if (slides.length <= 1) return;
+    let cancelled = false;
+
+    const loadHeroVideo = async () => {
+      try {
+        const res = await fetch("/api/settings", {
+          cache: "no-store",
+        });
+
+        const data = await res.json();
+        const settings = data.settings || {};
+
+        const url = String(
+          settings.hero_slider_video_url || ""
+        ).trim();
+
+        const enabled =
+          String(
+            settings.hero_slider_video_enabled || "false"
+          ) === "true";
+
+        if (!cancelled) {
+          setHeroVideoUrl(url);
+          setHeroVideoEnabled(Boolean(enabled && url));
+        }
+      } catch (err) {
+        console.error(
+          "Failed to load hero video settings:",
+          err
+        );
+      } finally {
+        if (!cancelled) {
+          setSettingsLoaded(true);
+        }
+      }
+    };
+
+    loadHeroVideo();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (heroVideoEnabled || slides.length <= 1) return;
 
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
+      setCurrentSlide(
+        (prev) => (prev + 1) % slides.length
+      );
     }, 5000);
 
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, [heroVideoEnabled, slides.length]);
 
   const goToSlide = (index: number) => setCurrentSlide(index);
 
@@ -45,6 +94,29 @@ export default function HeroSection({ slides }: Props) {
       (prev) => (prev + 1) % slides.length
     );
 
+  if (!settingsLoaded) {
+    return null;
+  }
+
+  if (heroVideoEnabled && heroVideoUrl) {
+    return (
+      <section className="relative w-full overflow-hidden bg-black">
+        <video
+          key={heroVideoUrl}
+          src={heroVideoUrl}
+          autoPlay
+          muted
+          playsInline
+          loop
+          preload="auto"
+          className="block w-full h-auto object-contain bg-black"
+        >
+          Your browser does not support video playback.
+        </video>
+      </section>
+    );
+  }
+
   if (!slides.length) return null;
 
   const slide = slides[currentSlide];
@@ -56,7 +128,6 @@ export default function HeroSection({ slides }: Props) {
       className="relative w-full overflow-hidden bg-black"
       dir={language === "ar" ? "rtl" : "ltr"}
     >
-      {/* Image - keeps its original aspect ratio and is never cropped */}
       <img
         key={slide.id}
         src={slideImage}
@@ -68,10 +139,8 @@ export default function HeroSection({ slides }: Props) {
         className="block w-full h-auto object-contain"
       />
 
-      {/* Overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent pointer-events-none" />
 
-      {/* Content */}
       <div className="absolute inset-0 flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="max-w-xl animate-[fadeIn_.5s_ease-out]">
@@ -113,7 +182,6 @@ export default function HeroSection({ slides }: Props) {
         </div>
       </div>
 
-      {/* Navigation Arrows */}
       {slides.length > 1 && (
         <>
           <button
@@ -136,7 +204,6 @@ export default function HeroSection({ slides }: Props) {
         </>
       )}
 
-      {/* Slide Indicators */}
       {slides.length > 1 && (
         <div className="absolute bottom-3 sm:bottom-8 left-1/2 -translate-x-1/2 flex gap-2 sm:gap-3 z-20">
           {slides.map((_, index) => (
@@ -155,7 +222,6 @@ export default function HeroSection({ slides }: Props) {
         </div>
       )}
 
-      {/* Scroll Indicator */}
       <div className="absolute bottom-8 right-8 hidden lg:flex flex-col items-center gap-2 animate-bounce z-20">
         <span className="text-white/60 text-xs tracking-widest rotate-90 origin-center mb-8">
           {language === "en"
