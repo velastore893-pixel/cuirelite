@@ -1,10 +1,14 @@
 import { db } from "@/db";
-import { categories, products, heroSlides } from "@/db/schema";
+import {
+  categories,
+  products,
+  heroSlides,
+  storeSettings,
+} from "@/db/schema";
 import { eq } from "drizzle-orm";
 import ClientPage from "./client-page";
 
-// Cache the homepage for 30 seconds.
-// This prevents every visitor from triggering fresh database queries.
+// Cache the homepage data briefly to reduce database pressure.
 export const revalidate = 30;
 
 export default async function Home() {
@@ -13,6 +17,7 @@ export default async function Home() {
     featuredProducts,
     newArrivals,
     allCategories,
+    settingsRows,
   ] = await Promise.all([
     db
       .select()
@@ -33,7 +38,18 @@ export default async function Home() {
     db
       .select()
       .from(categories),
+
+    db
+      .select()
+      .from(storeSettings),
   ]);
+
+  const settings = Object.fromEntries(
+    settingsRows.map((item) => [
+      item.key,
+      item.value ?? "",
+    ])
+  ) as Record<string, string>;
 
   return (
     <ClientPage
@@ -41,6 +57,7 @@ export default async function Home() {
       featuredProducts={featuredProducts}
       newArrivals={newArrivals}
       categories={allCategories}
+      settings={settings}
     />
   );
 }
