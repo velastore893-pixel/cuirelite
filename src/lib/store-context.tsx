@@ -410,7 +410,7 @@ export function StoreProvider({
   initialSettings,
 }: {
   children: ReactNode;
-  initialSettings?: Partial<StoreSettings>;
+  initialSettings?: Record<string, string>;
 }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
