@@ -15,10 +15,21 @@ export const pool =
   globalForDb.__arenaNextJsPostgresqlPool ??
   new Pool({
     connectionString: databaseUrl,
+
+    // Keep each Vercel instance lightweight.
+    max: 2,
+
+    // Close unused connections instead of keeping them open too long.
+    idleTimeoutMillis: 10000,
+
+    // Do not leave a request hanging forever if DB is unavailable.
+    connectionTimeoutMillis: 10000,
+
+    keepAlive: true,
+    allowExitOnIdle: true,
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.__arenaNextJsPostgresqlPool = pool;
-}
+// Reuse the same pool inside the same warm Vercel instance.
+globalForDb.__arenaNextJsPostgresqlPool = pool;
 
 export const db = drizzle(pool);
