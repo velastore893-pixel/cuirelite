@@ -3,28 +3,37 @@ import { categories, products, heroSlides } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import ClientPage from "./client-page";
 
-// Always render dynamically so the homepage reflects the latest
-// data from the admin dashboard (no build-time caching).
-export const dynamic = "force-dynamic";
+// Cache the homepage for 30 seconds.
+// This prevents every visitor from triggering fresh database queries.
+export const revalidate = 30;
 
 export default async function Home() {
-  const slides = await db
-    .select()
-    .from(heroSlides)
-    .where(eq(heroSlides.isActive, true))
-    .orderBy(heroSlides.order);
+  const [
+    slides,
+    featuredProducts,
+    newArrivals,
+    allCategories,
+  ] = await Promise.all([
+    db
+      .select()
+      .from(heroSlides)
+      .where(eq(heroSlides.isActive, true))
+      .orderBy(heroSlides.order),
 
-  const featuredProducts = await db
-    .select()
-    .from(products)
-    .where(eq(products.isFeatured, true));
+    db
+      .select()
+      .from(products)
+      .where(eq(products.isFeatured, true)),
 
-  const newArrivals = await db
-    .select()
-    .from(products)
-    .where(eq(products.isNewArrival, true));
+    db
+      .select()
+      .from(products)
+      .where(eq(products.isNewArrival, true)),
 
-  const allCategories = await db.select().from(categories);
+    db
+      .select()
+      .from(categories),
+  ]);
 
   return (
     <ClientPage
@@ -35,3 +44,4 @@ export default async function Home() {
     />
   );
 }
+
