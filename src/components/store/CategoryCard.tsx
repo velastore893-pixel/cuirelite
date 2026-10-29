@@ -29,22 +29,16 @@ export default function CategoryCard({ category }: Props) {
 
   const prepareCategory = () => {
     router.prefetch(categoryUrl);
-
-    if (image && image !== "/images/placeholder.jpg") {
-      const preloadImage = new Image();
-      preloadImage.src = image;
-    }
   };
 
   return (
     <Link
       href={categoryUrl}
-      prefetch
+      prefetch={false}
       onMouseEnter={prepareCategory}
-      onTouchStart={prepareCategory}
+      onFocus={prepareCategory}
       className="group relative rounded-xl sm:rounded-2xl overflow-hidden block bg-gray-50"
     >
-      {/* Image - preload early, original ratio, no crop */}
       <img
         src={image}
         alt={
@@ -53,15 +47,13 @@ export default function CategoryCard({ category }: Props) {
             : category.name
         }
         className="block w-full h-auto object-contain transition-transform duration-700 group-hover:scale-[1.02]"
-        loading="eager"
+        loading="lazy"
         fetchPriority="auto"
         decoding="async"
       />
 
-      {/* Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
 
-      {/* Content */}
       <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-6">
         <h3
           className="text-lg sm:text-2xl font-bold text-white mb-1 sm:mb-2"
@@ -80,5 +72,6 @@ export default function CategoryCard({ category }: Props) {
     </Link>
   );
 }
+
 
 
