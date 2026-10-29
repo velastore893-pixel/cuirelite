@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { useStore } from "@/lib/store-context";
@@ -17,16 +17,40 @@ interface HeroSlide {
 
 interface Props {
   slides: HeroSlide[];
+
+  // Optional server-provided values.
+  // When these are passed from the homepage, the browser can start
+  // loading the hero video immediately without waiting for /api/settings.
+  initialHeroVideoUrl?: string;
+  initialHeroVideoEnabled?: boolean;
 }
 
-export default function HeroSection({ slides }: Props) {
+export default function HeroSection({
+  slides,
+  initialHeroVideoUrl,
+  initialHeroVideoEnabled,
+}: Props) {
+  const hasInitialVideoConfig =
+    typeof initialHeroVideoEnabled === "boolean";
+
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [heroVideoUrl, setHeroVideoUrl] = useState("");
-  const [heroVideoEnabled, setHeroVideoEnabled] = useState(false);
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [heroVideoUrl, setHeroVideoUrl] = useState(
+    initialHeroVideoUrl || ""
+  );
+  const [heroVideoEnabled, setHeroVideoEnabled] = useState(
+    Boolean(initialHeroVideoEnabled && initialHeroVideoUrl)
+  );
+  const [settingsLoaded, setSettingsLoaded] = useState(
+    hasInitialVideoConfig
+  );
+
   const { language } = useStore();
 
+  // Fallback only when the parent page did not provide the hero video
+  // settings. Once the homepage passes them, this request is skipped.
   useEffect(() => {
+    if (hasInitialVideoConfig) return;
+
     let cancelled = false;
 
     const loadHeroVideo = async () => {
@@ -68,7 +92,35 @@ export default function HeroSection({ slides }: Props) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [hasInitialVideoConfig]);
+
+  // Warm up all slider images in the browser cache.
+  useEffect(() => {
+    for (const item of slides) {
+      if (!item.image) continue;
+
+      const img = new Image();
+      img.decoding = "async";
+      img.src = item.image;
+    }
+  }, [slides]);
+
+  // Warm up the hero video as soon as its URL is known.
+  useEffect(() => {
+    if (!heroVideoEnabled || !heroVideoUrl) return;
+
+    const video = document.createElement("video");
+    video.preload = "auto";
+    video.muted = true;
+    video.playsInline = true;
+    video.src = heroVideoUrl;
+    video.load();
+
+    return () => {
+      video.removeAttribute("src");
+      video.load();
+    };
+  }, [heroVideoEnabled, heroVideoUrl]);
 
   useEffect(() => {
     if (heroVideoEnabled || slides.length <= 1) return;
@@ -82,7 +134,8 @@ export default function HeroSection({ slides }: Props) {
     return () => clearInterval(timer);
   }, [heroVideoEnabled, slides.length]);
 
-  const goToSlide = (index: number) => setCurrentSlide(index);
+  const goToSlide = (index: number) =>
+    setCurrentSlide(index);
 
   const prevSlide = () =>
     setCurrentSlide(
@@ -94,8 +147,11 @@ export default function HeroSection({ slides }: Props) {
       (prev) => (prev + 1) % slides.length
     );
 
+  // Keep the current safe fallback only when no server config is supplied.
   if (!settingsLoaded) {
-    return null;
+    return (
+      <section className="relative w-full overflow-hidden bg-black min-h-[120px]" />
+    );
   }
 
   if (heroVideoEnabled && heroVideoUrl) {
@@ -137,6 +193,9 @@ export default function HeroSection({ slides }: Props) {
             : slide.title || "Hero"
         }
         className="block w-full h-auto object-contain"
+        loading="eager"
+        fetchPriority="high"
+        decoding="async"
       />
 
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent pointer-events-none" />
@@ -167,6 +226,7 @@ export default function HeroSection({ slides }: Props) {
 
             <Link
               href={slide.link || "/products"}
+              prefetch
               className="inline-flex items-center gap-2 sm:gap-3 bg-accent hover:bg-accent-dark text-white px-4 py-2 sm:px-8 sm:py-4 rounded-full font-semibold tracking-wider uppercase text-xs sm:text-sm transition-all duration-300 btn-shine group"
             >
               {language === "en"
@@ -234,4 +294,5 @@ export default function HeroSection({ slides }: Props) {
     </section>
   );
 }
+
 
