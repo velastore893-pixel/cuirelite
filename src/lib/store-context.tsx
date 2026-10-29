@@ -376,21 +376,21 @@ interface StoreContextType {
 }
 
 const defaultSettings: StoreSettings = {
-  store_name: "CUIR ELITE",
-  store_name_ar: "كوار إيليت",
-  store_description: "Premium Leather Jackets for Women",
-  store_description_ar: "جاكيتات جلد فاخرة للنساء",
-  store_email: "contact@cuirelite.com",
-  store_phone: "+1 234 567 890",
-  store_address: "123 Fashion Street, Paris, France",
-  currency: "USD",
-  currency_symbol: "$",
+  store_name: "",
+  store_name_ar: "",
+  store_description: "",
+  store_description_ar: "",
+  store_email: "",
+  store_phone: "",
+  store_address: "",
+  currency: "MAD",
+  currency_symbol: "DH",
   shipping_cost: "0",
   free_shipping_threshold: "0",
-  hero_title: "New Collection 2025",
-  hero_title_ar: "مجموعة جديدة 2025",
-  hero_subtitle: "Discover our premium leather jackets",
-  hero_subtitle_ar: "اكتشفي جاكيتات الجلد الفاخرة",
+  hero_title: "",
+  hero_title_ar: "",
+  hero_subtitle: "",
+  hero_subtitle_ar: "",
   facebook_pixel_id: "",
   tiktok_pixel_id: "",
   cod_enabled: "true",
@@ -405,16 +405,27 @@ const defaultSettings: StoreSettings = {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
-export function StoreProvider({ children }: { children: ReactNode }) {
+export function StoreProvider({
+  children,
+  initialSettings,
+}: {
+  children: ReactNode;
+  initialSettings?: Partial<StoreSettings>;
+}) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [language, setLanguageState] = useState<Language>("en");
-  const [settings, setSettings] =
-    useState<StoreSettings>(defaultSettings);
+
+  // Start with server-provided settings on the very first render.
+  // This prevents old/default branding from flashing before /api/settings loads.
+  const [settings, setSettings] = useState<StoreSettings>(() => ({
+    ...defaultSettings,
+    ...(initialSettings || {}),
+  }));
 
   const refreshSettings = useCallback(async () => {
     try {
-      const res = await fetch("/api/settings");
+      const res = await fetch("/api/settings", { cache: "no-store" });
       const data = await res.json();
 
       if (
@@ -432,8 +443,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    refreshSettings();
-  }, [refreshSettings]);
+    if (!initialSettings) {
+      refreshSettings();
+    }
+  }, [initialSettings, refreshSettings]);
 
   // Load saved language
   useEffect(() => {
