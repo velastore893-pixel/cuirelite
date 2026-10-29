@@ -17,10 +17,6 @@ interface HeroSlide {
 
 interface Props {
   slides: HeroSlide[];
-
-  // Optional server-provided values.
-  // When these are passed from the homepage, the browser can start
-  // loading the hero video immediately without waiting for /api/settings.
   initialHeroVideoUrl?: string;
   initialHeroVideoEnabled?: boolean;
 }
@@ -34,20 +30,14 @@ export default function HeroSection({
     typeof initialHeroVideoEnabled === "boolean";
 
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [heroVideoUrl, setHeroVideoUrl] = useState(
-    initialHeroVideoUrl || ""
-  );
+  const [heroVideoUrl, setHeroVideoUrl] = useState(initialHeroVideoUrl || "");
   const [heroVideoEnabled, setHeroVideoEnabled] = useState(
     Boolean(initialHeroVideoEnabled && initialHeroVideoUrl)
   );
-  const [settingsLoaded, setSettingsLoaded] = useState(
-    hasInitialVideoConfig
-  );
+  const [settingsLoaded, setSettingsLoaded] = useState(hasInitialVideoConfig);
 
   const { language } = useStore();
 
-  // Fallback only when the parent page did not provide the hero video
-  // settings. Once the homepage passes them, this request is skipped.
   useEffect(() => {
     if (hasInitialVideoConfig) return;
 
@@ -55,35 +45,22 @@ export default function HeroSection({
 
     const loadHeroVideo = async () => {
       try {
-        const res = await fetch("/api/settings", {
-          cache: "no-store",
-        });
-
+        const res = await fetch("/api/settings", { cache: "no-store" });
         const data = await res.json();
         const settings = data.settings || {};
 
-        const url = String(
-          settings.hero_slider_video_url || ""
-        ).trim();
-
+        const url = String(settings.hero_slider_video_url || "").trim();
         const enabled =
-          String(
-            settings.hero_slider_video_enabled || "false"
-          ) === "true";
+          String(settings.hero_slider_video_enabled || "false") === "true";
 
         if (!cancelled) {
           setHeroVideoUrl(url);
           setHeroVideoEnabled(Boolean(enabled && url));
         }
       } catch (err) {
-        console.error(
-          "Failed to load hero video settings:",
-          err
-        );
+        console.error("Failed to load hero video settings:", err);
       } finally {
-        if (!cancelled) {
-          setSettingsLoaded(true);
-        }
+        if (!cancelled) setSettingsLoaded(true);
       }
     };
 
@@ -94,60 +71,37 @@ export default function HeroSection({
     };
   }, [hasInitialVideoConfig]);
 
-  // Warm up all slider images in the browser cache.
+  // Load only the next slider image, not every slide at once.
   useEffect(() => {
-    for (const item of slides) {
-      if (!item.image) continue;
+    if (!settingsLoaded || heroVideoEnabled || slides.length <= 1) return;
 
-      const img = new Image();
-      img.decoding = "async";
-      img.src = item.image;
-    }
-  }, [slides]);
+    const nextIndex = (currentSlide + 1) % slides.length;
+    const nextImage = slides[nextIndex]?.image;
+    if (!nextImage) return;
 
-  // Warm up the hero video as soon as its URL is known.
-  useEffect(() => {
-    if (!heroVideoEnabled || !heroVideoUrl) return;
-
-    const video = document.createElement("video");
-    video.preload = "auto";
-    video.muted = true;
-    video.playsInline = true;
-    video.src = heroVideoUrl;
-    video.load();
-
-    return () => {
-      video.removeAttribute("src");
-      video.load();
-    };
-  }, [heroVideoEnabled, heroVideoUrl]);
+    const img = new Image();
+    img.decoding = "async";
+    img.src = nextImage;
+  }, [currentSlide, heroVideoEnabled, settingsLoaded, slides]);
 
   useEffect(() => {
     if (heroVideoEnabled || slides.length <= 1) return;
 
     const timer = setInterval(() => {
-      setCurrentSlide(
-        (prev) => (prev + 1) % slides.length
-      );
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
 
     return () => clearInterval(timer);
   }, [heroVideoEnabled, slides.length]);
 
-  const goToSlide = (index: number) =>
-    setCurrentSlide(index);
+  const goToSlide = (index: number) => setCurrentSlide(index);
 
   const prevSlide = () =>
-    setCurrentSlide(
-      (prev) => (prev - 1 + slides.length) % slides.length
-    );
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
 
   const nextSlide = () =>
-    setCurrentSlide(
-      (prev) => (prev + 1) % slides.length
-    );
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
 
-  // Keep the current safe fallback only when no server config is supplied.
   if (!settingsLoaded) {
     return (
       <section className="relative w-full overflow-hidden bg-black min-h-[120px]" />
@@ -176,8 +130,7 @@ export default function HeroSection({
   if (!slides.length) return null;
 
   const slide = slides[currentSlide];
-  const slideImage =
-    slide.image || "/images/hero-default.jpg";
+  const slideImage = slide.image || "/images/hero-default.jpg";
 
   return (
     <section
@@ -206,9 +159,7 @@ export default function HeroSection({
             {(slide.title || slide.titleAr) && (
               <h2
                 className="text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-2 sm:mb-4 leading-tight"
-                style={{
-                  fontFamily: "Playfair Display, serif",
-                }}
+                style={{ fontFamily: "Playfair Display, serif" }}
               >
                 {language === "ar"
                   ? slide.titleAr || slide.title
@@ -229,10 +180,7 @@ export default function HeroSection({
               prefetch
               className="inline-flex items-center gap-2 sm:gap-3 bg-accent hover:bg-accent-dark text-white px-4 py-2 sm:px-8 sm:py-4 rounded-full font-semibold tracking-wider uppercase text-xs sm:text-sm transition-all duration-300 btn-shine group"
             >
-              {language === "en"
-                ? "Shop Now"
-                : "تسوقي الآن"}
-
+              {language === "en" ? "Shop Now" : "تسوقي الآن"}
               <ArrowRight
                 size={18}
                 className="transition-transform group-hover:translate-x-1"
@@ -284,15 +232,13 @@ export default function HeroSection({
 
       <div className="absolute bottom-8 right-8 hidden lg:flex flex-col items-center gap-2 animate-bounce z-20">
         <span className="text-white/60 text-xs tracking-widest rotate-90 origin-center mb-8">
-          {language === "en"
-            ? "SCROLL"
-            : "تمرير"}
+          {language === "en" ? "SCROLL" : "تمرير"}
         </span>
-
         <div className="w-px h-12 bg-gradient-to-b from-white/60 to-transparent" />
       </div>
     </section>
   );
 }
+
 
 
