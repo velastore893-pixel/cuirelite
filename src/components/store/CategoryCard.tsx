@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { useStore } from "@/lib/store-context";
 
@@ -19,16 +20,31 @@ interface Props {
 
 export default function CategoryCard({ category }: Props) {
   const { language } = useStore();
+  const router = useRouter();
 
   const image =
     category.image || "/images/placeholder.jpg";
 
+  const categoryUrl = `/products?category=${category.slug}`;
+
+  const prepareCategory = () => {
+    router.prefetch(categoryUrl);
+
+    if (image && image !== "/images/placeholder.jpg") {
+      const preloadImage = new Image();
+      preloadImage.src = image;
+    }
+  };
+
   return (
     <Link
-      href={`/products?category=${category.slug}`}
+      href={categoryUrl}
+      prefetch
+      onMouseEnter={prepareCategory}
+      onTouchStart={prepareCategory}
       className="group relative rounded-xl sm:rounded-2xl overflow-hidden block bg-gray-50"
     >
-      {/* Image - automatic original ratio, no crop */}
+      {/* Image - preload early, original ratio, no crop */}
       <img
         src={image}
         alt={
@@ -37,7 +53,9 @@ export default function CategoryCard({ category }: Props) {
             : category.name
         }
         className="block w-full h-auto object-contain transition-transform duration-700 group-hover:scale-[1.02]"
-        loading="lazy"
+        loading="eager"
+        fetchPriority="auto"
+        decoding="async"
       />
 
       {/* Overlay */}
