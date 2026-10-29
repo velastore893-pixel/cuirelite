@@ -8,8 +8,8 @@ import {
 import { eq } from "drizzle-orm";
 import ClientPage from "./client-page";
 
-// Cache the homepage data briefly to reduce database pressure.
-export const revalidate = 30;
+// Render at request time so Vercel does not try to reach Supabase during build.
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const [
@@ -61,4 +61,5 @@ export default async function Home() {
     />
   );
 }
+
 
