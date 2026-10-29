@@ -41,8 +41,7 @@ export default function ProductCard({
 
   const discount =
     product.comparePrice &&
-    parseFloat(product.comparePrice) >
-      parseFloat(product.price)
+    parseFloat(product.comparePrice) > parseFloat(product.price)
       ? Math.round(
           ((parseFloat(product.comparePrice) -
             parseFloat(product.price)) /
@@ -51,13 +50,10 @@ export default function ProductCard({
         )
       : 0;
 
+  // Prefetch only when the user shows intent to open the product.
+  // Avoids prefetching every card on mobile while scrolling.
   const prefetchProduct = () => {
     router.prefetch(productUrl);
-
-    if (mainImage && mainImage !== "/images/placeholder.jpg") {
-      const image = new Image();
-      image.src = mainImage;
-    }
   };
 
   const handleOrder = (e: React.MouseEvent) => {
@@ -72,9 +68,8 @@ export default function ProductCard({
       className="product-card group relative bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm"
       dir={language === "ar" ? "rtl" : "ltr"}
       onMouseEnter={prefetchProduct}
-      onTouchStart={prefetchProduct}
+      onFocus={prefetchProduct}
     >
-      {/* Badges */}
       <div
         className={`absolute top-2 sm:top-4 z-20 flex flex-col gap-1 sm:gap-2 ${
           language === "ar"
@@ -101,7 +96,6 @@ export default function ProductCard({
         )}
       </div>
 
-      {/* Wishlist Button */}
       <button
         onClick={(e) => {
           e.preventDefault();
@@ -134,10 +128,9 @@ export default function ProductCard({
         />
       </button>
 
-      {/* Image - original quality and ratio, no crop */}
       <Link
         href={productUrl}
-        prefetch
+        prefetch={false}
         className="block relative bg-gray-50"
       >
         <img
@@ -153,7 +146,6 @@ export default function ProductCard({
           decoding="async"
         />
 
-        {/* Order Button */}
         <div className="absolute bottom-2 left-2 right-2 sm:bottom-4 sm:left-4 sm:right-4 z-10">
           <button
             onClick={handleOrder}
@@ -166,7 +158,6 @@ export default function ProductCard({
         </div>
       </Link>
 
-      {/* Info */}
       <div
         className={`p-2 sm:p-4 ${
           language === "ar"
@@ -174,7 +165,6 @@ export default function ProductCard({
             : "text-left"
         }`}
       >
-        {/* Colors */}
         {product.colors &&
           product.colors.length > 0 && (
             <div
@@ -197,7 +187,6 @@ export default function ProductCard({
             </div>
           )}
 
-        {/* Rating */}
         <div
           className={`flex items-center gap-0.5 mb-0.5 sm:mb-1 ${
             language === "ar"
@@ -214,8 +203,7 @@ export default function ProductCard({
           ))}
         </div>
 
-        {/* Name */}
-        <Link href={productUrl} prefetch>
+        <Link href={productUrl} prefetch={false}>
           <h3 className="font-semibold text-xs sm:text-sm text-brand hover:text-accent transition-colors line-clamp-1 mb-0.5 sm:mb-1">
             {language === "ar"
               ? product.nameAr || product.name
@@ -223,7 +211,6 @@ export default function ProductCard({
           </h3>
         </Link>
 
-        {/* Material */}
         {(product.material ||
           product.materialAr) && (
           <p className="text-[10px] sm:text-xs text-gray-400 mb-1">
@@ -234,7 +221,6 @@ export default function ProductCard({
           </p>
         )}
 
-        {/* Price */}
         <div
           className={`flex items-center gap-1 sm:gap-2 ${
             language === "ar"
@@ -258,5 +244,6 @@ export default function ProductCard({
     </div>
   );
 }
+
 
 
