@@ -226,7 +226,7 @@ function StoreHome({
 
               <Link
                 href="/products?isFeatured=true"
-                prefetch
+                prefetch={false}
                 className="flex items-center gap-2 text-brand hover:text-accent font-medium tracking-wider uppercase text-sm transition-colors group"
               >
                 {t("viewAll")}
@@ -245,7 +245,6 @@ function StoreHome({
                   <ProductCard
                     key={product.id}
                     product={product}
-                    priority
                   />
                 ))}
             </div>
@@ -279,7 +278,7 @@ function StoreHome({
 
               <Link
                 href="/products?category=leather-jackets"
-                prefetch
+                prefetch={false}
                 className="inline-flex items-center gap-3 bg-accent hover:bg-accent-dark text-white px-8 py-4 rounded-full font-semibold tracking-wider uppercase text-sm transition-all btn-shine group"
               >
                 {txt.shopCollection}
@@ -317,7 +316,7 @@ function StoreHome({
 
               <Link
                 href="/products?isNewArrival=true"
-                prefetch
+                prefetch={false}
                 className="flex items-center gap-2 text-brand hover:text-accent font-medium tracking-wider uppercase text-sm transition-colors group"
               >
                 {t("viewAll")}
