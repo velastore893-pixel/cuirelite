@@ -8,40 +8,48 @@ import {
 import { eq } from "drizzle-orm";
 import ClientPage from "./client-page";
 
+// Render at request time so Vercel does not try to reach Supabase during build.
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  let slides: any[] = [];
-  let featuredProducts: any[] = [];
-  let newArrivals: any[] = [];
-  let allCategories: any[] = [];
-  let settings: Record<string, string> = {};
+  const [
+    slides,
+    featuredProducts,
+    newArrivals,
+    allCategories,
+    settingsRows,
+  ] = await Promise.all([
+    db
+      .select()
+      .from(heroSlides)
+      .where(eq(heroSlides.isActive, true))
+      .orderBy(heroSlides.order),
 
-  try {
-    const [
-      slidesResult,
-      featuredResult,
-      newArrivalsResult,
-      categoriesResult,
-      settingsRows,
-    ] = await Promise.all([
-      db.select().from(heroSlides).where(eq(heroSlides.isActive, true)).orderBy(heroSlides.order),
-      db.select().from(products).where(eq(products.isFeatured, true)),
-      db.select().from(products).where(eq(products.isNewArrival, true)),
-      db.select().from(categories),
-      db.select().from(storeSettings),
-    ]);
+    db
+      .select()
+      .from(products)
+      .where(eq(products.isFeatured, true)),
 
-    slides = slidesResult;
-    featuredProducts = featuredResult;
-    newArrivals = newArrivalsResult;
-    allCategories = categoriesResult;
-    settings = Object.fromEntries(
-      settingsRows.map((item) => [item.key, item.value ?? ""])
-    ) as Record<string, string>;
-  } catch (error) {
-    console.error("Homepage database load failed:", error);
-  }
+    db
+      .select()
+      .from(products)
+      .where(eq(products.isNewArrival, true)),
+
+    db
+      .select()
+      .from(categories),
+
+    db
+      .select()
+      .from(storeSettings),
+  ]);
+
+  const settings = Object.fromEntries(
+    settingsRows.map((item) => [
+      item.key,
+      item.value ?? "",
+    ])
+  ) as Record<string, string>;
 
   return (
     <ClientPage
@@ -53,6 +61,5 @@ export default async function Home() {
     />
   );
 }
-
 
 
