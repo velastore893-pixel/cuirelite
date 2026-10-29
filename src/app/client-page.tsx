@@ -72,11 +72,16 @@ interface Category {
   createdAt: Date | null;
 }
 
+interface InitialStoreSettings {
+  [key: string]: string;
+}
+
 interface Props {
   slides: HeroSlide[];
   featuredProducts: Product[];
   newArrivals: Product[];
   categories: Category[];
+  settings: InitialStoreSettings;
 }
 
 function StoreHome({
@@ -84,62 +89,44 @@ function StoreHome({
   featuredProducts,
   newArrivals,
   categories,
+  settings,
 }: Props) {
   const { language, t } = useStore();
 
   const text = {
     en: {
       shopByCategory: "Shop by Category",
-
       categoryDescription:
         "Explore our collections and discover designs made for every style",
-
       curatedForYou: "Curated for You",
-
       featuredProducts: "Featured Products",
-
       italianLeatherTitle:
         "The Art of Italian Leather",
-
       italianLeatherDescription:
         "Each jacket is meticulously crafted from the finest Italian leather, designed to last a lifetime.",
-
       shopCollection: "Shop Collection",
-
       justIn: "Just In",
-
       newArrivals: "New Arrivals",
     },
 
     ar: {
       shopByCategory: "تسوقي حسب الفئة",
-
       categoryDescription:
         "اكتشف مجموعاتنا وتصاميمنا المتنوعة واختر ما يناسب أسلوبك",
-
       curatedForYou: "مختار لكِ",
-
       featuredProducts: "المنتجات المميزة",
-
       italianLeatherTitle:
         "فن الجلد الإيطالي",
-
       italianLeatherDescription:
         "كل جاكيت مصنوع بدقة من أجود الجلد الإيطالي، ومصمم ليدوم معك طويلاً.",
-
       shopCollection: "تسوقي المجموعة",
-
       justIn: "وصل حديثاً",
-
       newArrivals: "أحدث المنتجات",
     },
   };
 
   const txt = text[language];
 
-  // Homepage should show ONLY active main categories.
-  // Subcategories (Wydad, Raja, Naruto, etc.) are shown only
-  // after entering their parent category.
   const mainCategories = categories
     .filter(
       (category) =>
@@ -169,10 +156,13 @@ function StoreHome({
       <CartSidebar />
 
       {/* Hero */}
-      <HeroSection slides={slides} />
-
-      {/* Features */}
-      <FeaturesSection />
+      <HeroSection
+        slides={slides}
+        initialHeroVideoUrl={settings.hero_slider_video_url || ""}
+        initialHeroVideoEnabled={
+          settings.hero_slider_video_enabled === "true"
+        }
+      />
 
       {/* Categories */}
       {mainCategories.length > 0 && (
@@ -236,6 +226,7 @@ function StoreHome({
 
               <Link
                 href="/products?isFeatured=true"
+                prefetch
                 className="flex items-center gap-2 text-brand hover:text-accent font-medium tracking-wider uppercase text-sm transition-colors group"
               >
                 {t("viewAll")}
@@ -254,6 +245,7 @@ function StoreHome({
                   <ProductCard
                     key={product.id}
                     product={product}
+                    priority
                   />
                 ))}
             </div>
@@ -265,10 +257,8 @@ function StoreHome({
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative rounded-3xl overflow-hidden bg-brand py-16 px-8 md:px-16">
-            {/* Background Decoration */}
             <div className="absolute inset-0 opacity-10 pointer-events-none">
               <div className="absolute top-0 right-0 w-64 h-64 bg-accent rounded-full blur-3xl" />
-
               <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent rounded-full blur-3xl" />
             </div>
 
@@ -289,6 +279,7 @@ function StoreHome({
 
               <Link
                 href="/products?category=leather-jackets"
+                prefetch
                 className="inline-flex items-center gap-3 bg-accent hover:bg-accent-dark text-white px-8 py-4 rounded-full font-semibold tracking-wider uppercase text-sm transition-all btn-shine group"
               >
                 {txt.shopCollection}
@@ -326,6 +317,7 @@ function StoreHome({
 
               <Link
                 href="/products?isNewArrival=true"
+                prefetch
                 className="flex items-center gap-2 text-brand hover:text-accent font-medium tracking-wider uppercase text-sm transition-colors group"
               >
                 {t("viewAll")}
@@ -351,10 +343,11 @@ function StoreHome({
         </section>
       )}
 
-      {/* Testimonials */}
       <TestimonialSection />
 
-      {/* Footer */}
+      {/* Features - moved to the bottom of the homepage */}
+      <FeaturesSection />
+
       <Footer />
     </div>
   );
@@ -364,8 +357,9 @@ export default function ClientPage(
   props: Props
 ) {
   return (
-    <StoreProvider>
+    <StoreProvider initialSettings={props.settings}>
       <StoreHome {...props} />
     </StoreProvider>
   );
 }
+
