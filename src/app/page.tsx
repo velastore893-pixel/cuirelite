@@ -3,6 +3,7 @@ import {
   categories,
   products,
   heroSlides,
+  storeSettings,
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import ClientPage from "./client-page";
@@ -30,14 +31,24 @@ export default async function Home() {
     .select()
     .from(categories);
 
+  const settingsRows = await db
+    .select()
+    .from(storeSettings);
+
+  const settings = Object.fromEntries(
+    settingsRows.map((item) => [
+      item.key,
+      item.value ?? "",
+    ])
+  ) as Record<string, string>;
+
   return (
     <ClientPage
       slides={slides}
       featuredProducts={featuredProducts}
       newArrivals={newArrivals}
       categories={allCategories}
+      settings={settings}
     />
   );
 }
-
-
