@@ -1,27 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Script from "next/script";
-
-interface Settings {
-  facebook_pixel_id?: string;
-  tiktok_pixel_id?: string;
-  [key: string]: string | undefined;
-}
+import { useStore } from "@/lib/store-context";
 
 export default function TrackingPixels() {
-  const [settings, setSettings] = useState<Settings>({});
-
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.settings) {
-          setSettings(data.settings);
-        }
-      })
-      .catch(() => {});
-  }, []);
+  const { settings } = useStore();
 
   const fbPixelId = settings.facebook_pixel_id;
   const ttPixelId = settings.tiktok_pixel_id;
@@ -50,7 +33,6 @@ export default function TrackingPixels() {
             }}
           />
           <noscript>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               height="1"
               width="1"
@@ -81,3 +63,4 @@ export default function TrackingPixels() {
     </>
   );
 }
+
