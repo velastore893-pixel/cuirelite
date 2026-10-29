@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Heart, Zap, Star } from "lucide-react";
 import { useStore } from "@/lib/store-context";
 
@@ -22,15 +23,21 @@ interface Product {
 
 interface Props {
   product: Product;
+  priority?: boolean;
 }
 
-export default function ProductCard({ product }: Props) {
+export default function ProductCard({
+  product,
+  priority = false,
+}: Props) {
+  const router = useRouter();
   const [isWishlisted, setIsWishlisted] = useState(false);
-
   const { language, settings, t } = useStore();
 
   const mainImage =
     product.images?.[0] || "/images/placeholder.jpg";
+
+  const productUrl = `/products/${product.slug}`;
 
   const discount =
     product.comparePrice &&
@@ -44,17 +51,28 @@ export default function ProductCard({ product }: Props) {
         )
       : 0;
 
+  const prefetchProduct = () => {
+    router.prefetch(productUrl);
+
+    if (mainImage && mainImage !== "/images/placeholder.jpg") {
+      const image = new Image();
+      image.src = mainImage;
+    }
+  };
+
   const handleOrder = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    window.location.href = `/products/${product.slug}#order`;
+    router.push(`${productUrl}#order`);
   };
 
   return (
     <div
       className="product-card group relative bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm"
       dir={language === "ar" ? "rtl" : "ltr"}
+      onMouseEnter={prefetchProduct}
+      onTouchStart={prefetchProduct}
     >
       {/* Badges */}
       <div
@@ -116,9 +134,10 @@ export default function ProductCard({ product }: Props) {
         />
       </button>
 
-      {/* Image - automatic original ratio, no crop */}
+      {/* Image - original quality and ratio, no crop */}
       <Link
-        href={`/products/${product.slug}`}
+        href={productUrl}
+        prefetch
         className="block relative bg-gray-50"
       >
         <img
@@ -129,7 +148,9 @@ export default function ProductCard({ product }: Props) {
               : product.name
           }
           className="block w-full h-auto object-contain"
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
+          decoding="async"
         />
 
         {/* Order Button */}
@@ -194,7 +215,7 @@ export default function ProductCard({ product }: Props) {
         </div>
 
         {/* Name */}
-        <Link href={`/products/${product.slug}`}>
+        <Link href={productUrl} prefetch>
           <h3 className="font-semibold text-xs sm:text-sm text-brand hover:text-accent transition-colors line-clamp-1 mb-0.5 sm:mb-1">
             {language === "ar"
               ? product.nameAr || product.name
@@ -237,4 +258,5 @@ export default function ProductCard({ product }: Props) {
     </div>
   );
 }
+
 
