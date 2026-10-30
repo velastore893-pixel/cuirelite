@@ -47,8 +47,8 @@ export default function CategoryCard({ category }: Props) {
             : category.name
         }
         className="block w-full h-auto object-contain transition-transform duration-700 group-hover:scale-[1.02]"
-        loading="lazy"
-        fetchPriority="auto"
+        loading="eager"
+        fetchPriority="high"
         decoding="async"
       />
 
@@ -72,6 +72,7 @@ export default function CategoryCard({ category }: Props) {
     </Link>
   );
 }
+
 
 
 
