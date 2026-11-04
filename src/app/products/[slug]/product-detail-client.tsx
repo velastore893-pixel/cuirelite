@@ -6,6 +6,7 @@ import { StoreProvider, useStore } from "@/lib/store-context";
 import Navbar from "@/components/store/Navbar";
 import ProductCard from "@/components/store/ProductCard";
 import CartSidebar from "@/components/store/CartSidebar";
+import TrackingPixels from "@/components/store/TrackingPixels";
 import Footer from "@/components/store/Footer";
 import {
   Star,
@@ -76,6 +77,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [orderSubmitting, setOrderSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [checkoutTracked, setCheckoutTracked] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [pageSettings, setPageSettings] = useState<Record<string, string>>({});
   const [productOffers, setProductOffers] = useState<Array<{
@@ -117,6 +119,67 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
       })
       .catch(() => {});
   }, []);
+
+  const trackMetaEvent = (
+    eventName: "ViewContent" | "InitiateCheckout" | "Lead",
+    params: Record<string, unknown>
+  ) => {
+    const fbq = (window as typeof window & {
+      fbq?: (...args: unknown[]) => void;
+    }).fbq;
+
+    if (typeof fbq === "function") {
+      fbq("track", eventName, params);
+      return true;
+    }
+
+    return false;
+  };
+
+  // Meta Pixel: product page view.
+  useEffect(() => {
+    let attempts = 0;
+    const maxAttempts = 20;
+
+    const sendViewContent = () =>
+      trackMetaEvent("ViewContent", {
+        content_ids: [String(product.id)],
+        content_name: product.name,
+        content_type: "product",
+        value: Number(product.price) || 0,
+        currency: "MAD",
+        ...(category?.name ? { content_category: category.name } : {}),
+      });
+
+    if (sendViewContent()) return;
+
+    const timer = window.setInterval(() => {
+      attempts += 1;
+
+      if (sendViewContent() || attempts >= maxAttempts) {
+        window.clearInterval(timer);
+      }
+    }, 250);
+
+    return () => window.clearInterval(timer);
+  }, [product.id, product.name, product.price, category?.name]);
+
+  const trackInitiateCheckout = () => {
+    if (checkoutTracked) return;
+
+    const sent = trackMetaEvent("InitiateCheckout", {
+      content_ids: [String(product.id)],
+      content_name: product.name,
+      content_type: "product",
+      value: orderTotal,
+      currency: "MAD",
+      num_items: orderQuantity,
+    });
+
+    if (sent) {
+      setCheckoutTracked(true);
+    }
+  };
 
   const show = (key: string) => pageSettings[key] !== "false";
 
@@ -224,6 +287,16 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
         // NOTE: the order number is NOT sent to the customer — it is
         // stored in the database and visible only in the admin panel.
         const order = data.order;
+
+        trackMetaEvent("Lead", {
+          content_ids: [String(product.id)],
+          content_name: order.items?.[0]?.name || product.name,
+          content_type: "product",
+          value: Number(order.total) || orderTotal,
+          currency: "MAD",
+          num_items: Number(order.items?.[0]?.quantity || orderQuantity),
+        });
+
         const params = new URLSearchParams({
           product: order.items?.[0]?.name || product.name,
           qty: String(order.items?.[0]?.quantity || orderQuantity),
@@ -246,6 +319,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
 
   return (
     <div className="min-h-screen" dir={language === "ar" ? "rtl" : "ltr"}>
+      <TrackingPixels />
       <Navbar />
       <CartSidebar />
 
@@ -698,6 +772,8 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
             {/* ===== ORDER FORM - Directly Below ===== */}
             <div
               id="order"
+              onFocusCapture={trackInitiateCheckout}
+              onPointerDown={trackInitiateCheckout}
               className="relative rounded-2xl border-2 border-amber-200 bg-white p-5 sm:p-6 shadow-lg shadow-amber-500/10"
             >
               {/* Decorative top accent */}
