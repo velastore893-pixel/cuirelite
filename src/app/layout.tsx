@@ -6,11 +6,20 @@ import { StoreProvider } from "@/lib/store-context";
 import WhatsAppButton from "@/components/store/WhatsAppButton";
 
 export const metadata: Metadata = {
-  title: "CUIR ELITE | Premium Leather Jackets for Women",
+  title: "SIIN OFFICIEL",
   description:
-    "Discover our collection of premium leather jackets, blazers, and accessories for the modern woman. Handcrafted from the finest genuine leather.",
+    "Discover SIIN OFFICIEL collections and shop online at siinofficiel.shop.",
+  applicationName: "SIIN OFFICIEL",
   keywords:
-    "leather jackets, women fashion, cuir, blazers, biker jackets",
+    "SIIN, SIIN OFFICIEL, fashion, streetwear, clothing, Morocco",
+  openGraph: {
+    title: "SIIN OFFICIEL",
+    description:
+      "Discover SIIN OFFICIEL collections at siinofficiel.shop.",
+    siteName: "SIIN OFFICIEL",
+    url: "https://www.siinofficiel.shop/",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -30,7 +39,6 @@ export default function RootLayout({
       <body className="antialiased">
         <StoreProvider>
           {children}
-
           <WhatsAppButton />
         </StoreProvider>
       </body>
