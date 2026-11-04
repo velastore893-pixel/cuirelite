@@ -65,6 +65,7 @@ export default function AdminSettingsClient() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [faviconUploading, setFaviconUploading] = useState(false);
   const [heroVideoUploading, setHeroVideoUploading] = useState(false);
 
   const fetchData = async () => {
@@ -194,6 +195,75 @@ export default function AdminSettingsClient() {
       alert("Logo upload failed");
     } finally {
       setLogoUploading(false);
+      e.target.value = "";
+    }
+  };
+
+
+  const handleFaviconUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please choose an image file.");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Browser icon must be smaller than 5 MB.");
+      e.target.value = "";
+      return;
+    }
+
+    setFaviconUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success || !data.url) {
+        throw new Error(data.error || "Browser icon upload failed");
+      }
+
+      updateSetting("favicon_url", data.url);
+
+      const saveRes = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          key: "favicon_url",
+          value: data.url,
+        }),
+      });
+
+      if (!saveRes.ok) {
+        throw new Error("Icon uploaded but failed to save its URL");
+      }
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error("Browser icon upload failed:", err);
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Browser icon upload failed"
+      );
+    } finally {
+      setFaviconUploading(false);
       e.target.value = "";
     }
   };
@@ -835,6 +905,81 @@ export default function AdminSettingsClient() {
               ) : (
                 <div className="border border-dashed border-gray-200 rounded-xl bg-gray-50 p-5 min-h-[130px] flex items-center justify-center text-sm text-gray-400">
                   No logo uploaded yet
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+
+        {/* Browser Icon / Favicon */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="mb-6 pb-4 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <Globe size={20} className="text-accent" />
+              <h2 className="text-lg font-bold text-gray-900">
+                Browser Icon / Favicon
+              </h2>
+            </div>
+
+            <p className="text-sm text-gray-400 mt-1">
+              Upload the small icon displayed next to SIIN OFFICIEL in the browser tab.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload Browser Icon
+              </label>
+
+              <label
+                className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-colors ${
+                  faviconUploading
+                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    : "bg-gray-900 hover:bg-black text-white cursor-pointer"
+                }`}
+              >
+                {faviconUploading ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <Upload size={18} />
+                )}
+
+                {faviconUploading
+                  ? "Uploading..."
+                  : "Choose Icon From PC"}
+
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif,image/x-icon,image/vnd.microsoft.icon"
+                  onChange={handleFaviconUpload}
+                  disabled={faviconUploading}
+                  className="hidden"
+                />
+              </label>
+
+              <p className="text-xs text-gray-400 mt-2">
+                Best result: square PNG, 512 × 512 px. Maximum 5 MB.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Current Browser Icon
+              </label>
+
+              {getSetting("favicon_url") ? (
+                <div className="border border-gray-200 rounded-xl bg-gray-50 p-5 min-h-[130px] flex items-center justify-center">
+                  <img
+                    src={getSetting("favicon_url")}
+                    alt="Browser Icon"
+                    className="w-20 h-20 object-contain rounded-xl"
+                  />
+                </div>
+              ) : (
+                <div className="border border-dashed border-gray-200 rounded-xl bg-gray-50 p-5 min-h-[130px] flex items-center justify-center text-sm text-gray-400">
+                  No browser icon uploaded yet
                 </div>
               )}
             </div>
