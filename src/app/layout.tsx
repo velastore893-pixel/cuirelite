@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   applicationName: "SIIN OFFICIEL",
   keywords:
     "SIIN, SIIN OFFICIEL, fashion, streetwear, clothing, Morocco",
+  icons: {
+    icon: "/api/favicon",
+    shortcut: "/api/favicon",
+    apple: "/api/favicon",
+  },
   openGraph: {
     title: "SIIN OFFICIEL",
     description:
