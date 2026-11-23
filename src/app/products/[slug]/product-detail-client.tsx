@@ -121,7 +121,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
   }, []);
 
   const trackMetaEvent = (
-    eventName: "ViewContent" | "InitiateCheckout" | "Lead",
+    eventName: "ViewContent" | "InitiateCheckout" | "Purchase",
     params: Record<string, unknown>
   ) => {
     const fbq = (window as typeof window & {
@@ -288,7 +288,7 @@ function ProductDetailContent({ product, category, relatedProducts }: Props) {
         // stored in the database and visible only in the admin panel.
         const order = data.order;
 
-        trackMetaEvent("Lead", {
+        trackMetaEvent("Purchase", {
           content_ids: [String(product.id)],
           content_name: order.items?.[0]?.name || product.name,
           content_type: "product",
